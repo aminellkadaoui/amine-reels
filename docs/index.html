@@ -9,7 +9,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
-<script>document.documentElement.className='js'</script>
+<script>
+/* language before first paint: ?lang= → saved choice → browser language (ar* → Arabic, else English) */
+(function(d){var l,q=(location.search.match(/[?&]lang=(ar|en)\b/)||[])[1];
+  try{l=q||localStorage.getItem('ra-lang');if(q)localStorage.setItem('ra-lang',q);}catch(e){l=q;}
+  if(l!=='ar'&&l!=='en')l=/^ar/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'ar':'en';
+  d.lang=l;d.dir=l==='ar'?'rtl':'ltr';d.className='js'+(l==='en'?' i18n-wait':'');
+  if(l==='en')document.title='Reels Analysis — find the best-performing reels on any account';
+})(document.documentElement);
+</script>
 <style>
 :root{
   --bg:#FFFFFF;--fg:#1A1C1F;--mut:#6E6E6E;--muted:#F4F4F4;--line:#E6E6E6;--side:#F9F9F9;--sel:#ECECEC;
@@ -34,7 +42,18 @@ header{position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line);back
 .hc nav{display:flex;align-items:center}
 .hc nav a{padding:6px 12px;border-radius:999px;font-size:14px;line-height:20px;color:var(--mut)}
 .hc nav a:hover{color:var(--fg);background:var(--muted)}
-.hc .end{margin-inline-start:0}
+.hc .end{margin-inline-start:0;display:flex;align-items:center;gap:12px}
+/* language switch (segmented, 32px like btn-sm) */
+html.i18n-wait body{visibility:hidden}
+.lsw{display:inline-flex;gap:2px;padding:2px;height:32px;border-radius:999px;background:var(--muted)}
+.lsw button{height:28px;padding:0 10px;border:0;border-radius:999px;background:transparent;font:500 13px/28px var(--font);color:var(--mut);cursor:pointer;white-space:nowrap}
+.lsw button:hover{color:var(--fg)}
+.lsw button.on{background:#fff;color:var(--fg);box-shadow:0 1px 2px rgba(20,24,27,.08);cursor:default}
+/* English = LTR: mirror the few places that were fixed to RTL */
+html[dir=ltr] .s1 .pg1,html[dir=ltr] .ig,html[dir=ltr] .ig .pf{direction:ltr}
+html[dir=ltr] .xc.ar p{direction:ltr;text-align:left}
+html[dir=ltr] .key .ks{justify-content:flex-start}
+html[dir=ltr] #m-prev svg,html[dir=ltr] #m-next svg{transform:scaleX(-1)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;border-radius:999px;font-weight:500;font-family:inherit}
 .btn-sm{height:32px;padding:0 14px;font-size:14px;line-height:20px}
 .btn-lg{height:48px;padding:0 26px;font-size:15px}
@@ -116,6 +135,7 @@ aside.side{border-inline-start:1px solid var(--line);background:var(--side);padd
 .rw .k svg.i{width:13px;height:13px}
 .rw .v{font-weight:500}
 .rw .v.hot{color:var(--blue)}
+html[dir=ltr] .rw .v{white-space:nowrap}
 .rw .v small{color:var(--mut);font-weight:400;margin-inline-start:4px}
 .acts{margin-top:6px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
 .acts span{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:8px;background:var(--muted);font-size:10px;line-height:14px}
@@ -286,7 +306,9 @@ footer{margin-top:0;border-top:1px solid var(--line)}
   .viewer{width:200px}
 }
 @media (max-width:640px){
-  .hc{padding:0 20px}.hc nav{display:none}
+  .hc{padding:0 20px;gap:12px;grid-template-columns:1fr auto}.hc nav{display:none}.hc .brand{white-space:nowrap}.hc .end{gap:8px}
+  .lsw{padding:0;background:transparent}.lsw button.on{display:none}
+  .lsw button{height:32px;line-height:30px;padding:0 10px;border:1px solid var(--line);color:var(--fg)}
   .hero{padding-top:56px}
   .hero h1{font-size:27px;line-height:1.4}
   .cta{flex-direction:column;align-items:center}
@@ -352,25 +374,25 @@ footer{margin-top:0;border-top:1px solid var(--line)}
 
 <header>
   <div class="hc">
-    <a class="brand" href="#"><img src="icon.png" alt="">تحليل الريلز</a>
-    <nav><a href="#features">الميزات</a><a href="#install">طريقة التثبيت</a><a href="#keys">الاختصارات</a></nav>
-    <a class="end btn btn-sm btn-pri" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Reels-Analysis.zip">تنزيل</a>
+    <a class="brand" href="#"><img src="icon.png" alt=""><span data-i18n="brand">تحليل الريلز</span></a>
+    <nav><a href="#features" data-i18n="nFeat">الميزات</a><a href="#install" data-i18n="nInst">طريقة التثبيت</a><a href="#keys" data-i18n="nKeys">الاختصارات</a></nav>
+    <div class="end"><div class="lsw" role="group" aria-label="Language / اللغة"><button type="button" data-lang="ar" lang="ar">العربية</button><button type="button" data-lang="en" lang="en">English</button></div><a class="btn btn-sm btn-pri" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Reels-Analysis.zip" data-i18n="dl">تنزيل</a></div>
   </div>
 </header>
 
 <main>
   <section class="hero">
-    <p class="eyebrow">إضافة مجانية لمتصفح Chrome وBrave</p>
-    <h1>اعرف <span>أنجح الريلز</span><br>في أي حساب على إنستغرام</h1>
-    <p class="sub">مفتوحة المصدر، وتعمل داخل متصفحك.</p>
+    <p class="eyebrow" data-i18n="eyebrow">إضافة مجانية لمتصفح Chrome وBrave</p>
+    <h1 data-i18n="h1">اعرف <span>أنجح الريلز</span><br>في أي حساب على إنستغرام</h1>
+    <p class="sub" data-i18n="sub">مفتوحة المصدر، وتعمل داخل متصفحك.</p>
     <div class="cta">
-      <a class="btn btn-lg btn-pri" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Reels-Analysis.zip"><svg class="i"><use href="#i-download-simple"/></svg>تنزيل الإضافة</a>
-      <a class="btn btn-lg btn-out" href="https://github.com/aminellkadaoui/amine-reels"><svg class="i"><use href="#i-github-logo"/></svg>الكود على GitHub</a>
+      <a class="btn btn-lg btn-pri" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Reels-Analysis.zip"><svg class="i"><use href="#i-download-simple"/></svg><span data-i18n="dlExt">تنزيل الإضافة</span></a>
+      <a class="btn btn-lg btn-out" href="https://github.com/aminellkadaoui/amine-reels"><svg class="i"><use href="#i-github-logo"/></svg><span data-i18n="code">الكود على GitHub</span></a>
     </div>
-    <div class="meta"><span class="mono">CHROME · BRAVE · MIT</span><span class="by">طوّرها أمين باستخدام Claude</span></div>
+    <div class="meta"><span class="mono">CHROME · BRAVE · MIT</span><span class="by" data-i18n="by">طوّرها أمين باستخدام Claude</span></div>
   </section>
 
-  <section class="shot" aria-label="شكل الإضافة داخل إنستغرام">
+  <section class="shot" aria-label="شكل الإضافة داخل إنستغرام" data-i18n-aria="shotLbl">
     <div class="frame">
       <div class="win" aria-hidden="true">
         <div class="wbar"><div class="dots"><i></i><i></i><i></i></div><div class="url">instagram.com/account/</div></div>
@@ -378,24 +400,24 @@ footer{margin-top:0;border-top:1px solid var(--line)}
           <div class="pane">
             <div class="ghead">
               <div class="av"></div>
-              <div class="who"><b>ريلز مرتبة</b><span><span class="ltr">@account</span> · <span class="num">120</span> ريل</span></div>
-              <div class="seg"><span class="on">داخل إنستغرام</span><span>نافذة منفصلة</span></div>
+              <div class="who"><b data-i18n="sorted">ريلز مرتبة</b><span data-i18n="whoSub"><span class="ltr">@account</span> · <span class="num">120</span> ريل</span></div>
+              <div class="seg"><span class="on" data-i18n="inIg">داخل إنستغرام</span><span data-i18n="sepWin">نافذة منفصلة</span></div>
             </div>
             <div class="tb">
-              <div class="tg"><svg class="i"><use href="#i-sort-ascending"/></svg>الترتيب <div class="seg"><span class="on">نقاط التميّز</span><span>المشاهدات</span><span>الإعجابات</span><span>الأحدث</span></div></div>
-              <div class="tg f2"><svg class="i"><use href="#i-funnel"/></svg>أقل تميّز <div class="seg"><span>الكل</span><span class="on num">3×</span><span class="num">5×</span><span class="num">10×</span></div></div>
+              <div class="tg"><svg class="i"><use href="#i-sort-ascending"/></svg><span data-i18n="sort">الترتيب</span> <div class="seg"><span class="on" data-i18n="score">نقاط التميّز</span><span data-i18n="views">المشاهدات</span><span data-i18n="likes">الإعجابات</span><span data-i18n="newest">الأحدث</span></div></div>
+              <div class="tg f2"><svg class="i"><use href="#i-funnel"/></svg><span data-i18n="minScore">أقل تميّز</span> <div class="seg"><span data-i18n="all">الكل</span><span class="on num">3×</span><span class="num">5×</span><span class="num">10×</span></div></div>
             </div>
             <div class="grid">
-              <div class="card"><div class="th t1"><span class="badge num hot">62×</span><span class="dur num">0:38</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">2.9M</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">184K</span></span></div><div class="cd">قبل 3 أيام</div></div></div>
-              <div class="card"><div class="th t2"><span class="badge num hot">18×</span><span class="dur num">0:52</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">840K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">61K</span></span></div><div class="cd">قبل أسبوع</div></div></div>
-              <div class="card"><div class="th t3"><span class="badge num hot">7.4×</span><span class="dur num">1:04</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">355K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">22K</span></span></div><div class="cd">قبل شهر</div></div></div>
-              <div class="card"><div class="th t4"><span class="badge num hot">3.1×</span><span class="dur num">0:29</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">149K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">9.8K</span></span></div><div class="cd">قبل شهرين</div></div></div>
-              <div class="card"><div class="th t5"><span class="badge num">2.6×</span><span class="dur num">0:45</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">124K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">7.1K</span></span></div><div class="cd">قبل 3 أيام</div></div></div>
-              <div class="card"><div class="th t6"><span class="badge num">2.2×</span><span class="dur num">0:33</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">105K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">6.4K</span></span></div><div class="cd">قبل أسبوعين</div></div></div>
-              <div class="card"><div class="th t7"><span class="badge num">1.8×</span><span class="dur num">0:41</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">86K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">5.2K</span></span></div><div class="cd">قبل شهر</div></div></div>
-              <div class="card"><div class="th t8"><span class="badge num">1.4×</span><span class="dur num">0:57</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">67K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">3.9K</span></span></div><div class="cd">قبل 3 أشهر</div></div></div>
-              <div class="card"><div class="th t9"><span class="badge num">1.1×</span><span class="dur num">0:36</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">53K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">2.8K</span></span></div><div class="cd">قبل شهرين</div></div></div>
-              <div class="card"><div class="th t10"><span class="badge num">0.9×</span><span class="dur num">0:48</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">43K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">2.1K</span></span></div><div class="cd">قبل 4 أشهر</div></div></div>
+              <div class="card"><div class="th t1"><span class="badge num hot">62×</span><span class="dur num">0:38</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">2.9M</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">184K</span></span></div><div class="cd" data-i18n="d3d">قبل 3 أيام</div></div></div>
+              <div class="card"><div class="th t2"><span class="badge num hot">18×</span><span class="dur num">0:52</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">840K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">61K</span></span></div><div class="cd" data-i18n="d1w">قبل أسبوع</div></div></div>
+              <div class="card"><div class="th t3"><span class="badge num hot">7.4×</span><span class="dur num">1:04</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">355K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">22K</span></span></div><div class="cd" data-i18n="d1m">قبل شهر</div></div></div>
+              <div class="card"><div class="th t4"><span class="badge num hot">3.1×</span><span class="dur num">0:29</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">149K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">9.8K</span></span></div><div class="cd" data-i18n="d2m">قبل شهرين</div></div></div>
+              <div class="card"><div class="th t5"><span class="badge num">2.6×</span><span class="dur num">0:45</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">124K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">7.1K</span></span></div><div class="cd" data-i18n="d3d">قبل 3 أيام</div></div></div>
+              <div class="card"><div class="th t6"><span class="badge num">2.2×</span><span class="dur num">0:33</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">105K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">6.4K</span></span></div><div class="cd" data-i18n="d2w">قبل أسبوعين</div></div></div>
+              <div class="card"><div class="th t7"><span class="badge num">1.8×</span><span class="dur num">0:41</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">86K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">5.2K</span></span></div><div class="cd" data-i18n="d1m">قبل شهر</div></div></div>
+              <div class="card"><div class="th t8"><span class="badge num">1.4×</span><span class="dur num">0:57</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">67K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">3.9K</span></span></div><div class="cd" data-i18n="d3m">قبل 3 أشهر</div></div></div>
+              <div class="card"><div class="th t9"><span class="badge num">1.1×</span><span class="dur num">0:36</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">53K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">2.8K</span></span></div><div class="cd" data-i18n="d2m">قبل شهرين</div></div></div>
+              <div class="card"><div class="th t10"><span class="badge num">0.9×</span><span class="dur num">0:48</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">43K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">2.1K</span></span></div><div class="cd" data-i18n="d4m">قبل 4 أشهر</div></div></div>
             </div>
           </div>
           <aside class="side">
@@ -415,17 +437,17 @@ footer{margin-top:0;border-top:1px solid var(--line)}
               </div>
             </div>
             <div class="stats">
-              <div class="dtop"><span class="bn"><svg class="i"><use href="#i-chart-line-up"/></svg>تحليل الريلز</span><span>قبل 3 أيام</span></div>
-              <div class="rw"><span class="k"><svg class="i"><use href="#i-eye"/></svg>المشاهدات</span><span class="v num">2.9M</span></div>
-              <div class="rw"><span class="k"><svg class="i"><use href="#i-heart"/></svg>الإعجابات</span><span class="v num">184K</span></div>
-              <div class="rw"><span class="k"><svg class="i"><use href="#i-chat-circle"/></svg>التعليقات</span><span class="v num">2,310</span></div>
-              <div class="rw"><span class="k"><svg class="i"><use href="#i-lightning"/></svg>نقاط التميّز</span><span class="v hot num">62×</span></div>
-              <div class="rw"><span class="k"><svg class="i"><use href="#i-calendar-blank"/></svg>تاريخ النشر</span><span class="v">قبل 3 أيام<small class="num">22/11/2026</small></span></div>
+              <div class="dtop"><span class="bn"><svg class="i"><use href="#i-chart-line-up"/></svg><span data-i18n="brand">تحليل الريلز</span></span><span data-i18n="d3d">قبل 3 أيام</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-eye"/></svg><span data-i18n="views">المشاهدات</span></span><span class="v num">2.9M</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-heart"/></svg><span data-i18n="likes">الإعجابات</span></span><span class="v num">184K</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-chat-circle"/></svg><span data-i18n="comments">التعليقات</span></span><span class="v num">2,310</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-lightning"/></svg><span data-i18n="score">نقاط التميّز</span></span><span class="v hot num">62×</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-calendar-blank"/></svg><span data-i18n="pubDate">تاريخ النشر</span></span><span class="v" data-i18n="pubVal">قبل 3 أيام<small class="num">22/11/2026</small></span></div>
               <div class="acts">
-                <span><svg class="i"><use href="#i-bookmark-simple"/></svg>حفظ</span>
-                <span><svg class="i"><use href="#i-folder-simple"/></svg>مجلد</span>
-                <span><svg class="i"><use href="#i-waveform"/></svg>النص</span>
-                <span><svg class="i"><use href="#i-download-simple"/></svg>تنزيل</span>
+                <span><svg class="i"><use href="#i-bookmark-simple"/></svg><span data-i18n="save">حفظ</span></span>
+                <span><svg class="i"><use href="#i-folder-simple"/></svg><span data-i18n="folder">مجلد</span></span>
+                <span><svg class="i"><use href="#i-waveform"/></svg><span data-i18n="transcript">النص</span></span>
+                <span><svg class="i"><use href="#i-download-simple"/></svg><span data-i18n="dl">تنزيل</span></span>
               </div>
             </div>
           </aside>
@@ -435,25 +457,25 @@ footer{margin-top:0;border-top:1px solid var(--line)}
   </section>
 
   <section class="feats" id="features">
-    <div class="feat"><span class="ic"><svg class="i"><use href="#i-chart-line-up"/></svg></span><h3>ترتيب بنقاط التميّز</h3><p>مشاهدات الريل مقسومة على وسيط مشاهدات الحساب.</p></div>
-    <div class="feat"><span class="ic"><svg class="i"><use href="#i-eye"/></svg></span><h3>إحصاءات داخل إنستغرام</h3><p>المشاهدات والإعجابات والتعليقات وتاريخ النشر تحت كل ريل.</p></div>
-    <div class="feat"><span class="ic"><svg class="i"><use href="#i-squares-four"/></svg></span><h3>عدة حسابات معًا</h3><p>ريلز عشرة حسابات في شبكة واحدة، مع فلتر بالتاريخ.</p></div>
-    <div class="feat"><span class="ic"><svg class="i"><use href="#i-folder-simple"/></svg></span><h3>مكتبة ومجلدات</h3><p>احفظ ما يلهمك، ونزّل المجلد كله بالملف الأصلي.</p></div>
-    <div class="feat"><span class="ic"><svg class="i"><use href="#i-play-fill"/></svg></span><h3>تحكّم كامل في الفيديو</h3><p>تقديم 5 ثوانٍ، فريم بفريم، السرعة والصوت تحت الريل.</p></div>
-    <div class="feat"><span class="ic"><svg class="i"><use href="#i-moon"/></svg></span><h3>داكن وفاتح</h3><p>بألوان إنستغرام نفسها، داخل الصفحة أو في نافذة منفصلة.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-chart-line-up"/></svg></span><h3 data-i18n="f1h">ترتيب بنقاط التميّز</h3><p data-i18n="f1p">مشاهدات الريل مقسومة على وسيط مشاهدات الحساب.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-eye"/></svg></span><h3 data-i18n="f2h">إحصاءات داخل إنستغرام</h3><p data-i18n="f2p">المشاهدات والإعجابات والتعليقات وتاريخ النشر تحت كل ريل.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-squares-four"/></svg></span><h3 data-i18n="f3h">عدة حسابات معًا</h3><p data-i18n="f3p">ريلز عشرة حسابات في شبكة واحدة، مع فلتر بالتاريخ.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-folder-simple"/></svg></span><h3 data-i18n="f4h">مكتبة ومجلدات</h3><p data-i18n="f4p">احفظ ما يلهمك، ونزّل المجلد كله بالملف الأصلي.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-play-fill"/></svg></span><h3 data-i18n="f5h">تحكّم كامل في الفيديو</h3><p data-i18n="f5p">تقديم 5 ثوانٍ، فريم بفريم، السرعة والصوت تحت الريل.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-moon"/></svg></span><h3 data-i18n="f6h">داكن وفاتح، عربي وإنجليزي</h3><p data-i18n="f6p">بألوان إنستغرام نفسها، داخل الصفحة أو في نافذة منفصلة.</p></div>
   </section>
 
   <section class="sec" id="install">
-    <div class="sh"><p class="eyebrow">دقيقتان</p><h2>طريقة التثبيت</h2></div>
+    <div class="sh"><p class="eyebrow" data-i18n="instEb">دقيقتان</p><h2 data-i18n="nInst">طريقة التثبيت</h2></div>
     <div class="motion">
       <div class="frame frame-install"><div class="stagebox" aria-hidden="true">
         <div class="stage" id="stage" data-s="1">
           <!-- 1: download + unzip -->
           <div class="scene s1">
             <div class="pg1">
-              <div class="lg"><img src="icon.png" alt="">تحليل الريلز</div>
-              <div class="h">اعرف <span>أنجح الريلز</span></div>
-              <span class="btn btn-sm btn-pri dlb" id="m-dl"><svg class="i"><use href="#i-download-simple"/></svg>تنزيل الإضافة</span>
+              <div class="lg"><img src="icon.png" alt=""><span data-i18n="brand">تحليل الريلز</span></div>
+              <div class="h" data-i18n="mH">اعرف <span>أنجح الريلز</span></div>
+              <span class="btn btn-sm btn-pri dlb" id="m-dl"><svg class="i"><use href="#i-download-simple"/></svg><span data-i18n="dlExt">تنزيل الإضافة</span></span>
             </div>
             <div class="shelf">
               <div class="file" id="m-zip"><span class="fi"><svg class="i"><use href="#i-download-simple"/></svg></span><span>Reels-Analysis.zip<small>Downloads</small></span></div>
@@ -470,7 +492,7 @@ footer{margin-top:0;border-top:1px solid var(--line)}
             <div class="xh"><b>Extensions</b><div class="srch"></div><div class="dev">Developer mode <span class="tgl" id="m-tgl"></span></div></div>
             <div class="devbar" id="m-devbar"><span class="ob" id="m-load">Load unpacked</span><span class="ob">Pack extension</span><span class="ob">Update</span></div>
             <div class="xg">
-              <div class="xc ar" id="m-card"><div class="r1"><img src="icon.png" alt=""><div><b>تحليل الريلز</b><small>1.0</small></div></div><p>اعرف أنجح الريلز في أي حساب</p><div class="ft"><span class="tgl on"></span></div></div>
+              <div class="xc ar" id="m-card"><div class="r1"><img src="icon.png" alt=""><div><b data-i18n="brand">تحليل الريلز</b><small>1.0</small></div></div><p data-i18n="mDesc">اعرف أنجح الريلز في أي حساب</p><div class="ft"><span class="tgl on"></span></div></div>
               <div class="xc"><div class="r1"><span class="ico"></span><span class="ln" style="width:90px"></span></div><span class="ln" style="width:80%"></span><span class="ln" style="width:55%"></span></div>
               <div class="xc"><div class="r1"><span class="ico"></span><span class="ln" style="width:70px"></span></div><span class="ln" style="width:70%"></span><span class="ln" style="width:45%"></span></div>
             </div>
@@ -492,7 +514,7 @@ footer{margin-top:0;border-top:1px solid var(--line)}
               <div class="nav"><i style="width:80%"></i><i style="width:60%"></i><i style="width:70%"></i><i style="width:50%"></i><i style="width:65%"></i></div>
               <div class="pf">
                 <div class="ph"><div class="av"></div><div class="ls"><i style="width:140px"></i><i style="width:220px"></i><i style="width:180px"></i></div></div>
-                <div class="itabs"><span><svg class="i" style="width:13px;height:13px"><use href="#i-squares-four"/></svg>المنشورات</span><span><svg class="i" style="width:13px;height:13px"><use href="#i-film-reel"/></svg>ريلز</span><span class="rt" id="m-tab"><svg class="i" style="width:13px;height:13px"><use href="#i-chart-line-up"/></svg>ريلز مرتبة</span></div>
+                <div class="itabs"><span><svg class="i" style="width:13px;height:13px"><use href="#i-squares-four"/></svg><span data-i18n="posts">المنشورات</span></span><span><svg class="i" style="width:13px;height:13px"><use href="#i-film-reel"/></svg><span data-i18n="reels">ريلز</span></span><span class="rt" id="m-tab"><svg class="i" style="width:13px;height:13px"><use href="#i-chart-line-up"/></svg><span data-i18n="sorted">ريلز مرتبة</span></span></div>
                 <div class="ggrid" id="m-grid"><div><div class="th t1"><span class="badge num hot">62×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">2.9M</span></span></div></div><div><div class="th t2"><span class="badge num hot">18×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">840K</span></span></div></div><div><div class="th t3"><span class="badge num hot">7.4×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">355K</span></span></div></div><div><div class="th t4"><span class="badge num hot">3.1×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">149K</span></span></div></div><div><div class="th t5"><span class="badge num">2.6×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">124K</span></span></div></div></div>
               </div>
             </div>
@@ -501,39 +523,39 @@ footer{margin-top:0;border-top:1px solid var(--line)}
         </div>
       </div></div>
       <div class="steps">
-        <div class="srow"><div class="mctl" id="m-ctl" hidden><button type="button" id="m-prev" aria-label="الخطوة السابقة"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></svg></button><button type="button" id="m-play" aria-label="إيقاف مؤقت"><svg viewBox="0 0 256 256" fill="currentColor"><path id="m-play-p" d="M200,32H160a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H160V48h40ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Zm0,176H56V48H96Z"/></svg></button><button type="button" id="m-next" aria-label="الخطوة التالية"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/></svg></button></div><div class="dotsn" id="m-dots"><button type="button" class="on">1</button><button type="button">2</button><button type="button">3</button><button type="button">4</button><button type="button">5</button></div>
+        <div class="srow"><div class="mctl" id="m-ctl" hidden><button type="button" id="m-prev" aria-label="الخطوة السابقة" data-i18n-aria="prev"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></svg></button><button type="button" id="m-play" aria-label="إيقاف مؤقت"><svg viewBox="0 0 256 256" fill="currentColor"><path id="m-play-p" d="M200,32H160a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H160V48h40ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Zm0,176H56V48H96Z"/></svg></button><button type="button" id="m-next" aria-label="الخطوة التالية" data-i18n-aria="next"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/></svg></button></div><div class="dotsn" id="m-dots"><button type="button" class="on">1</button><button type="button">2</button><button type="button">3</button><button type="button">4</button><button type="button">5</button></div>
         </div>
-        <div class="cap" id="m-cap">نزّل الملف وفكّه</div>
+        <div class="cap" id="m-cap" data-i18n="cap1">نزّل الملف وفكّه</div>
       </div>
     </div>
     <ol class="static">
-      <li><span class="n">1</span><b>نزّل الملف وفكّه</b><span><code>Reels-Analysis.zip</code></span></li>
-      <li><span class="n">2</span><b>افتح صفحة الإضافات</b><span><code>chrome://extensions</code> أو <code>brave://extensions</code></span></li>
-      <li><span class="n">3</span><b>فعّل وضع المطوّر</b><span><code>Developer mode</code></span></li>
-      <li><span class="n">4</span><b>اختر المجلد المفكوك</b><span><code>Load unpacked</code></span></li>
-      <li><span class="n">5</span><b>افتح «ريلز مرتبة»</b><span>في أي حساب على إنستغرام</span></li>
+      <li><span class="n">1</span><b data-i18n="cap1">نزّل الملف وفكّه</b><span><code>Reels-Analysis.zip</code></span></li>
+      <li><span class="n">2</span><b data-i18n="cap2">افتح صفحة الإضافات</b><span data-i18n="st2"><code>chrome://extensions</code> أو <code>brave://extensions</code></span></li>
+      <li><span class="n">3</span><b data-i18n="cap3">فعّل وضع المطوّر</b><span><code>Developer mode</code></span></li>
+      <li><span class="n">4</span><b data-i18n="cap4">اختر المجلد المفكوك</b><span><code>Load unpacked</code></span></li>
+      <li><span class="n">5</span><b data-i18n="cap5">افتح «ريلز مرتبة»</b><span data-i18n="st5">في أي حساب على إنستغرام</span></li>
     </ol>
-    <p class="upd">للتحديث: نزّل الملف الجديد مكان القديم، ثم اضغط زر التحديث على بطاقة الإضافة.</p>
+    <p class="upd" data-i18n="upd">للتحديث: نزّل الملف الجديد مكان القديم، ثم اضغط زر التحديث على بطاقة الإضافة.</p>
   </section>
 
   <section class="sec" id="keys">
-    <div class="sh"><p class="eyebrow">تحت الريل مباشرة</p><h2>الاختصارات</h2></div>
+    <div class="sh"><p class="eyebrow" data-i18n="keysEb">تحت الريل مباشرة</p><h2 data-i18n="keysH">الاختصارات</h2></div>
     <div class="keys">
-      <div class="key"><div class="ks"><kbd>Space</kbd><em>/</em><kbd>K</kbd></div><p>تشغيل وإيقاف</p></div>
-      <div class="key"><div class="ks"><kbd>J</kbd><kbd>L</kbd><em>/</em><kbd>←</kbd><kbd>→</kbd></div><p>5 ثوانٍ للخلف وللأمام<small>مع Shift: 10 ثوانٍ</small></p></div>
-      <div class="key"><div class="ks"><kbd>,</kbd><kbd>.</kbd></div><p>فريم للخلف وللأمام<small>مع Shift: 10 فريمات</small></p></div>
-      <div class="key"><div class="ks"><kbd>[</kbd><kbd>]</kbd><kbd>\</kbd></div><p>أبطأ، أسرع، السرعة 1×</p></div>
-      <div class="key"><div class="ks"><kbd>M</kbd><em>·</em><kbd>↑</kbd><kbd>↓</kbd></div><p>كتم الصوت، رفعه وخفضه</p></div>
-      <div class="key"><div class="ks"><kbd>0</kbd><em>–</em><kbd>9</kbd></div><p>القفز إلى 0% – 90% من الريل</p></div>
-      <div class="key"><div class="ks"><kbd>Alt</kbd><em>+</em><kbd>Shift</kbd><em>+</em><kbd>R</kbd></div><p>فتح شبكة الريلز</p></div>
+      <div class="key"><div class="ks"><kbd>Space</kbd><em>/</em><kbd>K</kbd></div><p data-i18n="k1">تشغيل وإيقاف</p></div>
+      <div class="key"><div class="ks"><kbd>J</kbd><kbd>L</kbd><em>/</em><kbd>←</kbd><kbd>→</kbd></div><p data-i18n="k2">5 ثوانٍ للخلف وللأمام<small>مع Shift: 10 ثوانٍ</small></p></div>
+      <div class="key"><div class="ks"><kbd>,</kbd><kbd>.</kbd></div><p data-i18n="k3">فريم للخلف وللأمام<small>مع Shift: 10 فريمات</small></p></div>
+      <div class="key"><div class="ks"><kbd>[</kbd><kbd>]</kbd><kbd>\</kbd></div><p data-i18n="k4">أبطأ، أسرع، السرعة 1×</p></div>
+      <div class="key"><div class="ks"><kbd>M</kbd><em>·</em><kbd>↑</kbd><kbd>↓</kbd></div><p data-i18n="k5">كتم الصوت، رفعه وخفضه</p></div>
+      <div class="key"><div class="ks"><kbd>0</kbd><em>–</em><kbd>9</kbd></div><p data-i18n="k6">القفز إلى 0% – 90% من الريل</p></div>
+      <div class="key"><div class="ks"><kbd>Alt</kbd><em>+</em><kbd>Shift</kbd><em>+</em><kbd>R</kbd></div><p data-i18n="k7">فتح شبكة الريلز</p></div>
     </div>
   </section>
 
   <section class="sec">
     <div class="closing">
-      <h2>مجانية، مفتوحة المصدر، وتعمل في متصفحك.</h2>
-      <a class="btn btn-lg btn-pri" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Reels-Analysis.zip"><svg class="i"><use href="#i-download-simple"/></svg>تنزيل الإضافة</a>
-      <p>ما تحفظه يبقى في جهازك. لا خادم، ولا جمع بيانات، ولا إرسال لأي جهة. <a href="privacy.html">سياسة الخصوصية</a></p>
+      <h2 data-i18n="closeH">مجانية، مفتوحة المصدر، وتعمل في متصفحك.</h2>
+      <a class="btn btn-lg btn-pri" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Reels-Analysis.zip"><svg class="i"><use href="#i-download-simple"/></svg><span data-i18n="dlExt">تنزيل الإضافة</span></a>
+      <p data-i18n="closeP">ما تحفظه يبقى في جهازك. لا خادم، ولا جمع بيانات، ولا إرسال لأي جهة. <a href="privacy.html">سياسة الخصوصية</a></p>
     </div>
   </section>
 </main>
@@ -541,18 +563,81 @@ footer{margin-top:0;border-top:1px solid var(--line)}
 <footer>
   <div class="fc">
     <div class="fb">
-      <a class="brand" href="#"><img src="icon.png" alt="">تحليل الريلز</a>
-      <p>غير تابعة لإنستغرام ولا لشركة Meta.</p>
+      <a class="brand" href="#"><img src="icon.png" alt=""><span data-i18n="brand">تحليل الريلز</span></a>
+      <p data-i18n="notAff">غير تابعة لإنستغرام ولا لشركة Meta.</p>
       <a class="rb" href="https://github.com/aminellkadaoui/amine-reels" aria-label="GitHub"><svg class="i"><use href="#i-github-logo"/></svg></a>
-      <span class="cp">مفتوحة المصدر برخصة MIT · طوّرها أمين باستخدام Claude</span>
+      <span class="cp" data-i18n="cp">مفتوحة المصدر برخصة MIT · طوّرها أمين باستخدام Claude</span>
     </div>
     <nav class="fn">
-      <div><a href="#features">الميزات</a><a href="#install">طريقة التثبيت</a><a href="#keys">الاختصارات</a></div>
-      <div><a href="https://github.com/aminellkadaoui/amine-reels">GitHub</a><a href="https://github.com/aminellkadaoui/amine-reels/issues">أبلغ عن مشكلة</a><a href="privacy.html">الخصوصية</a></div>
+      <div><a href="#features" data-i18n="nFeat">الميزات</a><a href="#install" data-i18n="nInst">طريقة التثبيت</a><a href="#keys" data-i18n="nKeys">الاختصارات</a></div>
+      <div><a href="https://github.com/aminellkadaoui/amine-reels">GitHub</a><a href="https://github.com/aminellkadaoui/amine-reels/issues" data-i18n="issue">أبلغ عن مشكلة</a><a href="privacy.html" data-i18n="privacy">الخصوصية</a></div>
     </nav>
   </div>
 </footer>
 
+<script>
+/* bilingual text: Arabic lives in the HTML, English in this dictionary. Switch in place, no reload. */
+(function(){
+  var EN={
+    title:'Reels Analysis — find the best-performing reels on any account',
+    desc:'A free, open-source extension for Chrome and Brave: rank any Instagram account’s reels by outlier score, see each reel’s stats, save reels to folders, and control playback.',
+    brand:'Reels Analysis',nFeat:'Features',nInst:'Install',nKeys:'Shortcuts',dl:'Download',
+    eyebrow:'Free extension for Chrome and Brave',
+    h1:'Find the <span>best-performing reels</span><br>on any Instagram account',
+    sub:'Open source, runs in your browser.',
+    dlExt:'Download extension',code:'Code on GitHub',by:'Built by Amine with Claude',
+    shotLbl:'The extension inside Instagram',
+    sorted:'Sorted reels',whoSub:'<span class="ltr">@account</span> · <span class="num">120</span> reels',
+    inIg:'In Instagram',sepWin:'Separate window',sort:'Sort',score:'Outlier score',views:'Views',likes:'Likes',newest:'Newest',
+    minScore:'Min. outlier',all:'All',comments:'Comments',pubDate:'Posted',
+    pubVal:'3 days ago<small class="num">22/11/2026</small>',
+    d3d:'3 days ago',d1w:'1 week ago',d2w:'2 weeks ago',d1m:'1 month ago',d2m:'2 months ago',d3m:'3 months ago',d4m:'4 months ago',
+    save:'Save',folder:'Folder',transcript:'Transcript',
+    f1h:'Ranked by outlier score',f1p:'Each reel’s views divided by the account’s median views.',
+    f2h:'Stats inside Instagram',f2p:'Views, likes, comments and publish date under every reel.',
+    f3h:'Many accounts at once',f3p:'Reels from ten accounts in one grid, with a date filter.',
+    f4h:'Library and folders',f4p:'Save what inspires you, then download a whole folder in original quality.',
+    f5h:'Full video control',f5p:'Skip 5 seconds, step frame by frame, set speed and volume under the reel.',
+    f6h:'Dark, light, Arabic &amp; English',f6p:'Instagram’s own colours, inside the page or in a separate window.',
+    instEb:'Two minutes',mH:'Find the <span>best reels</span>',mDesc:'Find the best reels on any account',
+    posts:'Posts',reels:'Reels',prev:'Previous step',next:'Next step',pause:'Pause',play:'Play',
+    cap1:'Download and unzip the file',cap2:'Open the extensions page',cap3:'Turn on Developer mode',cap4:'Pick the unzipped folder',cap5:'Open “Sorted reels”',
+    st2:'<code>chrome://extensions</code> or <code>brave://extensions</code>',st5:'On any Instagram account',
+    upd:'To update: download the new file over the old one, then click Update on the extension card.',
+    keysEb:'Right under the reel',keysH:'Keyboard shortcuts',
+    k1:'Play / pause',k2:'Back / forward 5 seconds<small>With Shift: 10 seconds</small>',k3:'Back / forward one frame<small>With Shift: 10 frames</small>',
+    k4:'Slower, faster, back to 1×',k5:'Mute, volume up / down',k6:'Jump to 0% – 90% of the reel',k7:'Open the reels grid',
+    closeH:'Free, open source, and runs in your browser.',
+    closeP:'What you save stays on your device. No server, no data collection, nothing sent anywhere. <a href="privacy.html">Privacy policy</a>',
+    notAff:'Not affiliated with Instagram or Meta.',cp:'Open source under the MIT licence · Built by Amine with Claude',
+    issue:'Report an issue',privacy:'Privacy'
+  };
+  var AR={title:document.title,pause:'إيقاف مؤقت',play:'تشغيل'},d=document.documentElement,fns=[];
+  var md=document.querySelector('meta[name=description]');AR.desc=md.content;
+  var tx=document.querySelectorAll('[data-i18n]'),ar=document.querySelectorAll('[data-i18n-aria]');
+  for(var i=0;i<tx.length;i++){var k=tx[i].getAttribute('data-i18n');if(!(k in AR))AR[k]=tx[i].innerHTML;}
+  for(i=0;i<ar.length;i++){k=ar[i].getAttribute('data-i18n-aria');if(!(k in AR))AR[k]=ar[i].getAttribute('aria-label');}
+  AR.title=document.documentElement.lang==='ar'?document.title:'تحليل الريلز — اعرف أنجح الريلز في أي حساب';
+  var RA=window.RA={lang:d.lang,t:function(k){var D=RA.lang==='en'?EN:AR;return k in D?D[k]:AR[k];},on:function(f){fns.push(f);}};
+  function apply(l){
+    RA.lang=l;d.lang=l;d.dir=l==='ar'?'rtl':'ltr';
+    for(var i=0;i<tx.length;i++)tx[i].innerHTML=RA.t(tx[i].getAttribute('data-i18n'));
+    for(i=0;i<ar.length;i++)ar[i].setAttribute('aria-label',RA.t(ar[i].getAttribute('data-i18n-aria')));
+    document.title=RA.t('title');md.content=RA.t('desc');
+    var b=document.querySelectorAll('.lsw button');
+    for(i=0;i<b.length;i++){var on=b[i].getAttribute('data-lang')===l;b[i].className=on?'on':'';b[i].setAttribute('aria-pressed',on);}
+    fns.forEach(function(f){f(l);});
+  }
+  RA.set=function(l){
+    if(l===RA.lang)return;
+    try{localStorage.setItem('ra-lang',l);}catch(e){}
+    if(/[?&]lang=/.test(location.search)&&history.replaceState){var u=new URL(location.href);u.searchParams.set('lang',l);history.replaceState(null,'',u);}
+    apply(l);
+  };
+  document.querySelector('.lsw').addEventListener('click',function(e){var b=e.target.closest('button');if(b)RA.set(b.getAttribute('data-lang'));});
+  apply(RA.lang);d.classList.remove('i18n-wait');
+})();
+</script>
 <script>
 (function(){
   var box=document.querySelector('.stagebox'),st=document.getElementById('stage');
@@ -564,7 +649,6 @@ footer{margin-top:0;border-top:1px solid var(--line)}
 
   var $=function(id){return document.getElementById(id)};
   var cur=$('m-cur'),cap=$('m-cap'),dots=$('m-dots').children;
-  var caps=['','نزّل الملف وفكّه','افتح صفحة الإضافات','فعّل وضع المطوّر','اختر المجلد المفكوك','افتح «ريلز مرتبة»'];
   var vis=true,waiters=[];
   if(window.IntersectionObserver)new IntersectionObserver(function(e){vis=e[0].isIntersecting;if(vis){waiters.forEach(function(f){f()});waiters=[];}}).observe(box);
   function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
@@ -574,7 +658,7 @@ footer{margin-top:0;border-top:1px solid var(--line)}
   function at(el){var r=el.getBoundingClientRect(),s=st.getBoundingClientRect();return [(r.left-s.left+r.width/2)/sc-4,(r.top-s.top+r.height/2)/sc-3];}
   async function moveTo(el){var p=at(el);put(p[0],p[1]);await wait(1000);}
   async function click(el){cur.classList.add('dn');if(el)el.classList.add('press');await wait(180);cur.classList.remove('dn');if(el)el.classList.remove('press');await wait(120);}
-  function step(n){for(var i=0;i<dots.length;i++)dots[i].className=i===n-1?'on':'';cap.textContent=caps[n];}
+  function step(n){for(var i=0;i<dots.length;i++)dots[i].className=i===n-1?'on':'';cap.setAttribute('data-i18n','cap'+n);cap.innerHTML=RA.t('cap'+n);}
   function scene(n){st.setAttribute('data-s',n);}
   function reset(){
     ['m-zip','m-arr','m-fold','m-devbar','m-dlg','m-card','m-grid'].forEach(function(id){$(id).classList.remove('in')});
@@ -611,12 +695,13 @@ footer{margin-top:0;border-top:1px solid var(--line)}
     }catch(e){if(!(e instanceof Stop))throw e;}
   }
   var pp=$('m-play-p'),PAUSE=pp.getAttribute('d'),PLAY='M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z';
-  function paint(){pp.setAttribute('d',playing?PAUSE:PLAY);$('m-play').setAttribute('aria-label',playing?'إيقاف مؤقت':'تشغيل');}
+  function paint(){pp.setAttribute('d',playing?PAUSE:PLAY);$('m-play').setAttribute('aria-label',RA.t(playing?'pause':'play'));}
   for(var i=0;i<dots.length;i++)(function(n){dots[n-1].addEventListener('click',function(){play(n);});})(i+1);
   $('m-prev').addEventListener('click',function(){play(curStep===1?5:curStep-1);});
   $('m-next').addEventListener('click',function(){play(curStep%5+1);});
   $('m-play').addEventListener('click',function(){playing=!playing;paint();if(playing)play(curStep);});
   $('m-ctl').hidden=false;paint();
+  RA.on(function(){paint();play(curStep);}); // the stage mirrors: restart the current step so the cursor finds the new spots
   play(1);
 })();
 </script>

@@ -5,6 +5,51 @@
 // 4) update notice: unpacked copies never auto-update, so on startup and every 12 h ask GitHub for the latest
 //    release tag (one GET, no user data sent). Newer → badge «جديد» + ar_update for the popup banner.
 
+// ---------------- language (ar_settings.lang: 'auto' | 'ar' | 'en'; auto → browser UI language) ----------------
+const MSG = {
+  ar: {
+    badge: 'جديد', dlRoot: 'تحليل الريلز', noReels: 'لا توجد ريلز للتنزيل.', notIg: 'ليس من إنستغرام', noUrl: 'لم أجد رابط الفيديو',
+    failed: 'فشل التنزيل ({e})',
+    NETWORK_FAILED: 'انقطع الاتصال أثناء التنزيل', NETWORK_TIMEOUT: 'انتهت مهلة الاتصال', NETWORK_SERVER_DOWN: 'الخادم لا يستجيب',
+    NETWORK_INVALID_REQUEST: 'رابط الفيديو غير صالح', SERVER_FORBIDDEN: 'رفض إنستغرام الرابط (انتهت صلاحيته غالبًا)',
+    SERVER_UNAUTHORIZED: 'رفض إنستغرام الرابط (يحتاج تسجيل دخول)', SERVER_BAD_CONTENT: 'الملف غير موجود على الخادم',
+    SERVER_FAILED: 'فشل خادم إنستغرام', FILE_NO_SPACE: 'لا توجد مساحة كافية في القرص', FILE_ACCESS_DENIED: 'لا يمكن الكتابة في مجلد التنزيلات',
+    FILE_NAME_TOO_LONG: 'اسم الملف طويل جدًا', USER_CANCELED: 'أُلغي التنزيل', FILE_FAILED: 'تعذّر حفظ الملف'
+  },
+  en: {
+    badge: 'NEW', dlRoot: 'Reels Analysis', noReels: 'No reels to download.', notIg: 'Not from Instagram', noUrl: 'Couldn’t find the video link',
+    failed: 'Download failed ({e})',
+    NETWORK_FAILED: 'Connection lost during the download', NETWORK_TIMEOUT: 'Connection timed out', NETWORK_SERVER_DOWN: 'The server isn’t responding',
+    NETWORK_INVALID_REQUEST: 'Invalid video link', SERVER_FORBIDDEN: 'Instagram refused the link (it has most likely expired)',
+    SERVER_UNAUTHORIZED: 'Instagram refused the link (login needed)', SERVER_BAD_CONTENT: 'The file isn’t on the server',
+    SERVER_FAILED: 'Instagram’s server failed', FILE_NO_SPACE: 'Not enough disk space', FILE_ACCESS_DENIED: 'Can’t write to the Downloads folder',
+    FILE_NAME_TOO_LONG: 'File name too long', USER_CANCELED: 'Download canceled', FILE_FAILED: 'Couldn’t save the file'
+  }
+};
+let langNow = 'ar';
+function resolveLang(pref) {
+  if (pref === 'ar' || pref === 'en') return pref;
+  let ui = '';
+  try { ui = chrome.i18n.getUILanguage() || ''; } catch (e) { /* no i18n API */ }
+  return /^ar/i.test(ui) ? 'ar' : 'en';
+}
+async function loadLang() {
+  try { const o = await chrome.storage.local.get('ar_settings'); langNow = resolveLang(o && o.ar_settings && o.ar_settings.lang); }
+  catch (e) { langNow = resolveLang(); }
+  return langNow;
+}
+function tr(key, vars) {
+  let s = MSG[langNow][key]; if (s == null) s = MSG.ar[key]; if (s == null) return null;
+  return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m)) : s;
+}
+loadLang();
+chrome.storage.onChanged.addListener((ch, area) => {
+  if (area !== 'local' || !ch.ar_settings) return;
+  langNow = resolveLang(ch.ar_settings.newValue && ch.ar_settings.newValue.lang);
+  // the «new version» badge follows the language
+  chrome.storage.local.get('ar_update').then((o) => { if (o && o.ar_update) chrome.action.setBadgeText({ text: tr('badge') }); }).catch(() => {});
+});
+
 // ---------------- update notice ----------------
 const UPDATE_API = 'https://api.github.com/repos/aminellkadaoui/amine-reels/releases/latest';
 const UPDATE_PAGE = 'https://aminellkadaoui.github.io/amine-reels/';
@@ -32,7 +77,8 @@ async function checkUpdate(localOverride) {
     await chrome.storage.local.set({ ar_update: { version, url: UPDATE_PAGE, notes, checkedAt: Date.now() } });
     try { await chrome.action.setBadgeBackgroundColor({ color: '#0F6BFF' }); } catch (e) { }
     try { if (chrome.action.setBadgeTextColor) await chrome.action.setBadgeTextColor({ color: '#FFFFFF' }); } catch (e) { }
-    await chrome.action.setBadgeText({ text: 'جديد' });
+    await loadLang();
+    await chrome.action.setBadgeText({ text: tr('badge') });
     return { ok: true, newer: true, version };
   }
   await chrome.storage.local.remove('ar_update');
@@ -68,7 +114,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (msg.type === 'AR_DOWNLOAD') {
     const reels = Array.isArray(msg.reels) ? msg.reels.filter(Boolean) : [];
-    if (!reels.length) { sendResponse({ ok: false, error: 'لا توجد ريلز للتنزيل.' }); return; }
+    if (!reels.length) { sendResponse({ ok: false, error: tr('noReels') }); return; }
     const jobId = 'dl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const job = { jobId, reels, folderName: msg.folderName || '', tabId: sender && sender.tab ? sender.tab.id : null,
       done: 0, total: reels.length, failed: [], finished: false, current: null };
@@ -193,20 +239,15 @@ function downloadOnce(url, filename) {
   });
 }
 
-const ERR_AR = {
-  NETWORK_FAILED: 'انقطع الاتصال أثناء التنزيل', NETWORK_TIMEOUT: 'انتهت مهلة الاتصال', NETWORK_SERVER_DOWN: 'الخادم لا يستجيب',
-  NETWORK_INVALID_REQUEST: 'رابط الفيديو غير صالح', SERVER_FORBIDDEN: 'رفض إنستغرام الرابط (انتهت صلاحيته غالبًا)',
-  SERVER_UNAUTHORIZED: 'رفض إنستغرام الرابط (يحتاج تسجيل دخول)', SERVER_BAD_CONTENT: 'الملف غير موجود على الخادم',
-  SERVER_FAILED: 'فشل خادم إنستغرام', FILE_NO_SPACE: 'لا توجد مساحة كافية في القرص', FILE_ACCESS_DENIED: 'لا يمكن الكتابة في مجلد التنزيلات',
-  FILE_NAME_TOO_LONG: 'اسم الملف طويل جدًا', USER_CANCELED: 'أُلغي التنزيل', FILE_FAILED: 'تعذّر حفظ الملف'
-};
-const errAr = (e) => ERR_AR[e] || ('فشل التنزيل (' + e + ')');
+// chrome.downloads error codes → a reason in the user's language
+const errText = (e) => (/^[A-Z_]+$/.test(String(e)) && tr(e)) || tr('failed', { e });
 
 async function runJob(job) {
   const stop = keepAlive();
+  await loadLang();
   const ctx = { tabId: null, opened: null, openTried: false };
   const folder = clean(job.folderName, 60);
-  const dir = 'تحليل الريلز/' + (folder ? folder + '/' : '');
+  const dir = tr('dlRoot') + '/' + (folder ? folder + '/' : '');
   report(job);
   try {
     for (let i = 0; i < job.reels.length; i++) {
@@ -215,21 +256,21 @@ async function runJob(job) {
       job.current = code;
       let reason = null;
       if (reel.platform && reel.platform !== 'instagram') {
-        reason = 'ليس من إنستغرام';
+        reason = tr('notIg');
       } else {
         const fresh = await freshUrl(ctx, reel);
         const tries = [];
         if (fresh.url) tries.push(fresh.url);
         if (reel.videoUrl && reel.videoUrl !== fresh.url) tries.push(reel.videoUrl);   // fallback: the stored link
         const user = clean((fresh.meta && fresh.meta.username) || reel.username || 'instagram', 50) || 'instagram';
-        if (!tries.length) reason = 'لم أجد رابط الفيديو';
+        if (!tries.length) reason = tr('noUrl');
         let lastErr = null;
         for (const url of tries) {
           const res = await downloadOnce(url, dir + clean(user + ' - ' + code, 120) + extOf(url));
           if (res.ok) { lastErr = null; break; }
           lastErr = res.error;
         }
-        if (tries.length && lastErr) reason = errAr(lastErr);
+        if (tries.length && lastErr) reason = errText(lastErr);
       }
       if (reason) job.failed.push({ code, username: reel.username || '', reason });
       job.done = i + 1;

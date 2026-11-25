@@ -38,29 +38,11 @@
     return n;
   }
   function ic(name) { return el('span', { class: 'ic', html: PH[name] || '' }); }
-  function fmtNum(n) {
-    if (n == null || isNaN(n)) return '—';
-    if (n < 0) return 'مخفية';
-    function f(x) { var s = x.toFixed(1); return s.slice(-2) === '.0' ? s.slice(0, -2) : s; }
-    if (n >= 1e9) return f(n / 1e9) + 'B';
-    if (n >= 1e6) return f(n / 1e6) + 'M';
-    if (n >= 1e3) return f(n / 1e3) + 'K';
-    return String(Math.round(n));
-  }
+  var T = window.ARI18N.t, ARP = window.ARP;
+  var fmtNum = ARP.fmtNum;
   function fmtOutlier(o) { if (o == null || isNaN(o)) return ''; if (o >= 0 && o < 0.1) return '<0.1×'; /* a real ratio is never 0 (0 views → null) */ return (o >= 10 ? String(Math.round(o)) : (Math.round(o * 10) / 10).toFixed(1).replace(/\.0$/, '')) + '×'; }
   function fmtTime(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
-  var UNITS = [[31536000, 'سنة', 'سنتين', 'سنوات', 'سنة'], [2592000, 'شهر', 'شهرين', 'أشهر', 'شهرًا'], [604800, 'أسبوع', 'أسبوعين', 'أسابيع', 'أسبوعًا'],
-    [86400, 'يوم', 'يومين', 'أيام', 'يومًا'], [3600, 'ساعة', 'ساعتين', 'ساعات', 'ساعة'], [60, 'دقيقة', 'دقيقتين', 'دقائق', 'دقيقة']];
-  function relTime(ts) {
-    if (!ts) return '—';
-    var d = Math.max(0, Date.now() / 1000 - ts);
-    for (var i = 0; i < UNITS.length; i++) {
-      var u = UNITS[i];
-      if (d >= u[0]) { var n = Math.floor(d / u[0]); return n === 1 ? 'قبل ' + u[1] : n === 2 ? 'قبل ' + u[2] : n <= 10 ? 'قبل ' + n + ' ' + u[3] : 'قبل ' + n + ' ' + u[4]; }
-    }
-    return 'الآن';
-  }
-  function reelsWord(n) { return n === 1 ? 'ريل' : 'ريلز'; }
+  function relTime(ts) { return ARP.relTime(ts, '—'); }
   function keyOf(r) { return (r.platform || '') + ':' + (r.code || r.id || r.url); }
   function iso(ms) { return ms ? new Date(ms).toISOString() : ''; }
   function folderById(id) { for (var i = 0; i < folders.length; i++) if (folders[i].id === id) return folders[i]; return null; }
@@ -111,9 +93,9 @@
   }
   function createFolder(name, keys, done) {
     name = name.trim();
-    if (!name) return done && done({ error: 'اكتب اسم المجلد.' });
+    if (!name) return done && done({ error: T('l.errName') });
     var exists = folders.some(function (f) { return f.name.trim() === name; });
-    if (exists) return done && done({ error: 'يوجد مجلد بهذا الاسم.' });
+    if (exists) return done && done({ error: T('l.errExists') });
     var f = { id: newId(), name: name, createdAt: Date.now() };
     mutate(function (lib, fl) {
       fl.push(f);
@@ -138,7 +120,7 @@
     list.sort(function (a, b) { return v(b) - v(a) || (b.views || 0) - (a.views || 0); });
     return list;
   }
-  function viewName() { var f = view !== 'all' && folderById(view); return f ? f.name : 'الكل'; }
+  function viewName() { var f = view !== 'all' && folderById(view); return f ? f.name : T('c.all'); }
 
   // ---- render
   function render() {
@@ -146,17 +128,17 @@
     var list = filtered(), all = inView();
     $('sub').textContent = '';
     $('sub').appendChild(el('span', { class: 'num', text: String(items.length) }));
-    $('sub').appendChild(document.createTextNode(items.length === 1 ? ' ريل محفوظ' : ' ريلز محفوظة'));
+    $('sub').appendChild(document.createTextNode(' ' + ARP.plural('l.savedN', items.length)));
     $('sub').appendChild(document.createTextNode(' · '));
     $('sub').appendChild(el('span', { class: 'num', text: String(folders.length) }));
-    $('sub').appendChild(document.createTextNode(folders.length === 1 ? ' مجلد' : ' مجلدات'));
+    $('sub').appendChild(document.createTextNode(' ' + ARP.plural('l.foldersN', folders.length)));
     $('exJson').disabled = $('exCsv').disabled = !items.length;
     $('vname').textContent = viewName();
-    $('vcount').textContent = list.length === all.length ? list.length + ' ' + reelsWord(list.length) : 'يظهر ' + list.length + ' من ' + all.length;
+    $('vcount').textContent = list.length === all.length ? ARP.count('c.reels', list.length) : T('l.showing', { n: list.length, m: all.length });
     $('dlAll').disabled = !list.length || !!(job && !job.finished);
-    $('dlAll').lastChild.textContent = $('q').value.trim() && list.length !== all.length ? 'تنزيل الظاهر (' + list.length + ')' : 'تنزيل الكل';
+    $('dlAll').lastChild.textContent = $('q').value.trim() && list.length !== all.length ? T('l.dlShown', { n: list.length }) : T('l.dlAll');
     $('selBtn').className = 'btn' + (selectMode ? ' on' : '');
-    $('selBtn').lastChild.textContent = selectMode ? 'إنهاء التحديد' : 'تحديد';
+    $('selBtn').lastChild.textContent = T(selectMode ? 'l.selectEnd' : 'l.select');
 
     // keep only picks that still exist
     var live = {}; items.forEach(function (r) { live[keyOf(r)] = 1; });
@@ -168,8 +150,8 @@
       grid.textContent = '';
       empty.hidden = false; empty.textContent = '';
       empty.appendChild(ic(!items.length ? 'bookmark-simple' : view !== 'all' && !all.length ? 'folder-simple' : 'magnifying-glass'));
-      empty.appendChild(el('div', { text: !items.length ? 'لا توجد ريلز محفوظة بعد. اضغط «حفظ» في عارض الريل لتظهر هنا.'
-        : view !== 'all' && !all.length ? 'هذا المجلد فارغ. أضف إليه ريلز من «الكل» بزر «إضافة إلى مجلد».' : 'لا توجد نتائج لهذا البحث.' }));
+      empty.appendChild(el('div', { text: T(!items.length ? 'l.emptyLib'
+        : view !== 'all' && !all.length ? 'l.emptyFolder' : 'l.noResults') }));
       return;
     }
     empty.hidden = true;
@@ -201,20 +183,20 @@
     var focusNow = document.activeElement && side.contains(document.activeElement) && document.activeElement.tagName === 'INPUT';
     if (focusNow && sideEdit) return;   // don't rebuild while the user types a name
     side.textContent = '';
-    side.appendChild(row('all', 'الكل', items.length, 'squares-four'));
-    side.appendChild(el('div', { class: 'label', text: 'المجلدات' }));
+    side.appendChild(row('all', T('c.all'), items.length, 'squares-four'));
+    side.appendChild(el('div', { class: 'label', text: T('l.folders') }));
     folders.forEach(function (f) {
-      if (sideEdit && sideEdit.id === f.id && sideEdit.kind === 'rename') side.appendChild(nameEditor(f.name, 'حفظ', function (name, err) { renameFolder(f, name, err); }));
+      if (sideEdit && sideEdit.id === f.id && sideEdit.kind === 'rename') side.appendChild(nameEditor(f.name, T('c.save'), function (name, err) { renameFolder(f, name, err); }));
       else if (sideEdit && sideEdit.id === f.id && sideEdit.kind === 'delete') side.appendChild(deleteConfirm(f));
       else side.appendChild(row(f.id, f.name, countIn(f.id), 'folder-simple', f));
     });
     if (sideEdit && sideEdit.kind === 'new') {
-      side.appendChild(nameEditor('', 'إنشاء', function (name, err) {
+      side.appendChild(nameEditor('', T('l.create'), function (name, err) {
         createFolder(name, null, function (res) { if (res.error) return err(res.error); sideEdit = null; view = res.folder.id; render(); });
       }));
     } else {
       side.appendChild(el('button', { class: 'frow newf', type: 'button', onclick: function () { sideEdit = { kind: 'new' }; renderSide(); focusSide(); } },
-        [ic('folder-simple-plus'), el('span', { class: 'name', text: 'مجلد جديد' })]));
+        [ic('folder-simple-plus'), el('span', { class: 'name', text: T('l.newFolder') })]));
     }
   }
   function row(id, name, count, icon, f) {
@@ -223,14 +205,14 @@
       ic(icon), el('span', { class: 'name', text: name }), el('span', { class: 'cnt num', text: String(count) })
     ]);
     if (f) {
-      r.appendChild(el('button', { class: 'mini', type: 'button', title: 'إعادة تسمية', onclick: function (e) { e.stopPropagation(); sideEdit = { kind: 'rename', id: f.id }; renderSide(); focusSide(); } }, [ic('pencil-simple')]));
-      r.appendChild(el('button', { class: 'mini del', type: 'button', title: 'حذف المجلد', onclick: function (e) { e.stopPropagation(); sideEdit = { kind: 'delete', id: f.id }; renderSide(); } }, [ic('trash')]));
+      r.appendChild(el('button', { class: 'mini', type: 'button', title: T('l.rename'), onclick: function (e) { e.stopPropagation(); sideEdit = { kind: 'rename', id: f.id }; renderSide(); focusSide(); } }, [ic('pencil-simple')]));
+      r.appendChild(el('button', { class: 'mini del', type: 'button', title: T('l.delFolder'), onclick: function (e) { e.stopPropagation(); sideEdit = { kind: 'delete', id: f.id }; renderSide(); } }, [ic('trash')]));
     }
     return r;
   }
   function focusSide() { var i = $('side').querySelector('input'); if (i) { i.focus(); i.select(); } }
   function nameEditor(value, okLabel, onOk) {
-    var input = el('input', { type: 'text', value: value, placeholder: 'اسم المجلد', maxlength: '60' });
+    var input = el('input', { type: 'text', value: value, placeholder: T('l.folderName'), maxlength: '60' });
     var err = el('div', { class: 'err', hidden: true });
     function showErr(t) { err.textContent = t; err.hidden = false; }
     function ok() { onOk(input.value, showErr); }
@@ -238,13 +220,13 @@
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ok(); } else if (e.key === 'Escape') cancel(); });
     return el('div', { class: 'fedit' }, [input, err, el('div', { class: 'row' }, [
       el('button', { class: 'btn sm primary', type: 'button', text: okLabel, onclick: ok }),
-      el('button', { class: 'btn sm', type: 'button', text: 'إلغاء', onclick: cancel })
+      el('button', { class: 'btn sm', type: 'button', text: T('c.cancel'), onclick: cancel })
     ])]);
   }
   function renameFolder(f, name, err) {
     name = name.trim();
-    if (!name) return err('اكتب اسم المجلد.');
-    if (folders.some(function (x) { return x.id !== f.id && x.name.trim() === name; })) return err('يوجد مجلد بهذا الاسم.');
+    if (!name) return err(T('l.errName'));
+    if (folders.some(function (x) { return x.id !== f.id && x.name.trim() === name; })) return err(T('l.errExists'));
     sideEdit = null;
     document.activeElement && document.activeElement.blur();
     mutate(function (lib, fl) {
@@ -254,13 +236,13 @@
   function deleteConfirm(f) {
     var n = countIn(f.id);
     return el('div', { class: 'fedit' }, [
-      el('div', { class: 'q', text: 'حذف المجلد «' + f.name + '»؟ ' + (n ? 'الريلز (' + n + ') تبقى في المكتبة.' : 'المجلد فارغ.') }),
+      el('div', { class: 'q', text: T('l.delQ', { name: f.name }) + ' ' + (n ? T('l.delKeep', { n: n }) : T('l.delEmpty')) }),
       el('div', { class: 'row' }, [
-        el('button', { class: 'btn sm danger solid', type: 'button', text: 'حذف', onclick: function () {
+        el('button', { class: 'btn sm danger solid', type: 'button', text: T('l.del'), onclick: function () {
           sideEdit = null; if (view === f.id) view = 'all';
           mutate(function (lib, fl) { return { lib: dropTag(lib, null, f.id), folders: fl.filter(function (x) { return x.id !== f.id; }) }; });
         } }),
-        el('button', { class: 'btn sm', type: 'button', text: 'إلغاء', onclick: function () { sideEdit = null; renderSide(); } })
+        el('button', { class: 'btn sm', type: 'button', text: T('c.cancel'), onclick: function () { sideEdit = null; renderSide(); } })
       ])
     ]);
   }
@@ -271,10 +253,10 @@
     var hot = (r.outlier || 0) >= 3;
     var hasTx = !!(r.transcript && r.transcript.text);
     var img = el('img', { src: r.thumb || '', alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' });
-    var thumb = el('a', { class: 'thumb', href: r.url, target: '_blank', rel: 'noopener', title: 'فتح الريل' }, [
+    var thumb = el('a', { class: 'thumb', href: r.url, target: '_blank', rel: 'noopener', title: T('l.openReel') }, [
       img,
       r.outlier != null ? el('span', { class: 'badge num' + (hot ? ' hot' : ''), text: fmtOutlier(r.outlier) }) : null,
-      hasTx ? el('span', { class: 'txmark', title: 'محفوظ مع النص' }, [ic('waveform'), 'نص']) : null,
+      hasTx ? el('span', { class: 'txmark', title: T('l.hasTx') }, [ic('waveform'), T('l.tx')]) : null,
       el('span', { class: 'pick', hidden: true }, [ic('check')])
     ]);
     img.addEventListener('error', function () {
@@ -290,12 +272,12 @@
       renderSelbar(filtered());
     }
     thumb.addEventListener('click', togglePick);
-    var copyBtn = el('button', { class: 'btn sm grow', type: 'button', disabled: !hasTx, title: hasTx ? 'نسخ النص' : 'لم يُحفظ نص لهذا الريل' }, [ic('copy'), el('span', { text: 'نسخ النص' })]);
+    var copyBtn = el('button', { class: 'btn sm grow', type: 'button', disabled: !hasTx, title: hasTx ? T('l.copyTx') : T('l.noTx') }, [ic('copy'), el('span', { text: T('l.copyTx') })]);
     copyBtn.addEventListener('click', function () {
-      navigator.clipboard.writeText(r.transcript.text).then(function () { copyBtn.lastChild.textContent = 'نُسخ'; setTimeout(function () { copyBtn.lastChild.textContent = 'نسخ النص'; }, 1500); });
+      navigator.clipboard.writeText(r.transcript.text).then(function () { copyBtn.lastChild.textContent = T('l.copied'); setTimeout(function () { copyBtn.lastChild.textContent = T('l.copyTx'); }, 1500); });
     });
     var chips = (r.folders || []).map(folderById).filter(Boolean);
-    var folderBtn = el('button', { class: 'btn sm icon', type: 'button', title: 'إضافة إلى مجلد' }, [ic('folder-simple-plus')]);
+    var folderBtn = el('button', { class: 'btn sm icon', type: 'button', title: T('l.addToFolder') }, [ic('folder-simple-plus')]);
     folderBtn.addEventListener('click', function (e) { e.stopPropagation(); openReelMenu(folderBtn, r); });
     node = el('div', { class: 'card' }, [
       thumb,
@@ -306,17 +288,17 @@
           el('span', null, [ic('eye'), el('span', { class: 'num', text: fmtNum(r.views) })]),
           el('span', null, [ic('heart'), el('span', { class: 'num', text: fmtNum(r.likes) })]),
           el('span', null, [ic('chat-circle'), el('span', { class: 'num', text: fmtNum(r.comments) })]),
-          el('span', { title: 'المشاركات' }, [ic('paper-plane-tilt'), el('span', { class: 'num', text: fmtNum(r.shares) })])
+          el('span', { title: T('c.shares') }, [ic('paper-plane-tilt'), el('span', { class: 'num', text: fmtNum(r.shares) })])
         ]),
-        el('div', { class: 'date', text: 'نُشر ' + relTime(r.takenAt) + ' · حُفظ ' + relTime((r.savedAt || 0) / 1000) }),
+        el('div', { class: 'date', text: T('l.dates', { a: relTime(r.takenAt), b: relTime((r.savedAt || 0) / 1000) }) }),
         chips.length ? el('div', { class: 'chips' }, chips.map(function (f) { return el('span', { class: 'chip', title: f.name }, [ic('folder-simple'), f.name]); })) : null
       ]),
       el('div', { class: 'acts' }, [
         copyBtn,
         folderBtn,
-        el('button', { class: 'btn sm icon', type: 'button', title: 'تنزيل الملف الأصلي', onclick: function () { startDownload([r], view !== 'all' ? viewName() : ''); } }, [ic('download-simple')]),
-        el('a', { class: 'btn sm icon', href: r.url, target: '_blank', rel: 'noopener', title: 'فتح في إنستغرام' }, [ic('arrow-up-right')]),
-        el('button', { class: 'btn sm icon danger', type: 'button', title: 'إزالة من المكتبة', onclick: function () { removeReels([k]); } }, [ic('trash')])
+        el('button', { class: 'btn sm icon', type: 'button', title: T('l.dlOrig'), onclick: function () { startDownload([r], view !== 'all' ? viewName() : ''); } }, [ic('download-simple')]),
+        el('a', { class: 'btn sm icon', href: r.url, target: '_blank', rel: 'noopener', title: T('c.openIg') }, [ic('arrow-up-right')]),
+        el('button', { class: 'btn sm icon danger', type: 'button', title: T('c.removeLib'), onclick: function () { removeReels([k]); } }, [ic('trash')])
       ])
     ]);
     return node;
@@ -339,9 +321,9 @@
   }
   function newFolderItem(m, keys, after) {
     var holder = el('div');
-    var btn = el('button', { class: 'mi newf', type: 'button' }, [ic('folder-simple-plus'), el('span', { class: 'name', text: 'مجلد جديد' })]);
+    var btn = el('button', { class: 'mi newf', type: 'button' }, [ic('folder-simple-plus'), el('span', { class: 'name', text: T('l.newFolder') })]);
     btn.addEventListener('click', function () {
-      var input = el('input', { type: 'text', placeholder: 'اسم المجلد', maxlength: '60' });
+      var input = el('input', { type: 'text', placeholder: T('l.folderName'), maxlength: '60' });
       var err = el('div', { class: 'err', hidden: true });
       function ok() {
         createFolder(input.value, keys, function (res) {
@@ -352,8 +334,8 @@
       input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ok(); } });
       holder.textContent = '';
       holder.appendChild(el('div', { class: 'fedit' }, [input, err, el('div', { class: 'row' }, [
-        el('button', { class: 'btn sm primary', type: 'button', text: 'إنشاء وإضافة', onclick: ok }),
-        el('button', { class: 'btn sm', type: 'button', text: 'إلغاء', onclick: closeMenu })
+        el('button', { class: 'btn sm primary', type: 'button', text: T('l.createAdd'), onclick: ok }),
+        el('button', { class: 'btn sm', type: 'button', text: T('c.cancel'), onclick: closeMenu })
       ])]));
       input.focus();
     });
@@ -364,8 +346,8 @@
     if (menuFor === anchor) return closeMenu();
     closeMenu();
     var k = keyOf(r), keys = {}; keys[k] = true;
-    var m = el('div', { class: 'menu' }, [el('div', { class: 'mt', text: 'إضافة إلى مجلد' })]);
-    if (!folders.length) m.appendChild(el('div', { class: 'none', text: 'لا توجد مجلدات بعد.' }));
+    var m = el('div', { class: 'menu' }, [el('div', { class: 'mt', text: T('l.addToFolder') })]);
+    if (!folders.length) m.appendChild(el('div', { class: 'none', text: T('l.noFolders') }));
     folders.forEach(function (f) {
       var cb = el('input', { type: 'checkbox' });
       cb.checked = inFolder(r, f.id);
@@ -386,7 +368,7 @@
     closeMenu();
     var m = el('div', { class: 'menu' }, [el('div', { class: 'mt', text: title })]);
     var list = folders.filter(function (f) { return f.id !== excludeId; });
-    if (!list.length) m.appendChild(el('div', { class: 'none', text: 'لا توجد مجلدات أخرى.' }));
+    if (!list.length) m.appendChild(el('div', { class: 'none', text: T('l.noOther') }));
     list.forEach(function (f) {
       m.appendChild(el('button', { class: 'mi', type: 'button', onclick: function () { closeMenu(); onPick(f); } }, [ic('folder-simple'), el('span', { class: 'name', text: f.name }), el('span', { class: 'cnt num', text: String(countIn(f.id)) })]));
     });
@@ -404,40 +386,40 @@
     bar.hidden = false; bar.textContent = '';
     var p = pickedKeys(), n = p.n;
     var allPicked = list.length && list.every(function (r) { return picked[keyOf(r)]; });
-    bar.appendChild(el('span', { class: 'count', text: n ? 'تم تحديد ' + n : 'اضغط على الريلز لتحديدها' }));
-    bar.appendChild(el('button', { class: 'btn sm', type: 'button', text: allPicked ? 'إلغاء تحديد الكل' : 'تحديد الكل', onclick: function () {
+    bar.appendChild(el('span', { class: 'count', text: n ? T('l.picked', { n: n }) : T('l.pickHint') }));
+    bar.appendChild(el('button', { class: 'btn sm', type: 'button', text: T(allPicked ? 'l.unpickAll' : 'l.pickAll'), onclick: function () {
       if (allPicked) picked = {}; else list.forEach(function (r) { picked[keyOf(r)] = true; });
       render();
     } }));
     bar.appendChild(el('span', { class: 'sp' }));
-    var addBtn = el('button', { class: 'btn sm', type: 'button', disabled: !n }, [ic('folder-simple-plus'), el('span', { text: 'إضافة إلى مجلد' })]);
+    var addBtn = el('button', { class: 'btn sm', type: 'button', disabled: !n }, [ic('folder-simple-plus'), el('span', { text: T('l.addToFolder') })]);
     addBtn.addEventListener('click', function () {
-      openPickMenu(addBtn, 'إضافة المحدد إلى', function (f) {
+      openPickMenu(addBtn, T('l.addPickedTo'), function (f) {
         var keys = pickedKeys().keys;
-        mutate(function (lib) { return { lib: addTag(lib, keys, f.id) }; }, function () { showToast('أُضيف ' + Object.keys(keys).length + ' إلى «' + f.name + '».'); });
+        mutate(function (lib) { return { lib: addTag(lib, keys, f.id) }; }, function () { showToast(T('l.added', { n: Object.keys(keys).length, name: f.name })); });
       });
     });
     bar.appendChild(addBtn);
     if (view !== 'all') {
       var cur = view;
-      var moveBtn = el('button', { class: 'btn sm', type: 'button', disabled: !n }, [ic('folder-simple'), el('span', { text: 'نقل إلى مجلد' })]);
+      var moveBtn = el('button', { class: 'btn sm', type: 'button', disabled: !n }, [ic('folder-simple'), el('span', { text: T('l.move') })]);
       moveBtn.addEventListener('click', function () {
-        openPickMenu(moveBtn, 'نقل المحدد إلى', function (f) {
+        openPickMenu(moveBtn, T('l.movePickedTo'), function (f) {
           var keys = pickedKeys().keys;
-          mutate(function (lib) { return { lib: dropTag(addTag(lib, keys, f.id), keys, cur) }; }, function () { picked = {}; showToast('نُقل ' + Object.keys(keys).length + ' إلى «' + f.name + '».'); });
+          mutate(function (lib) { return { lib: dropTag(addTag(lib, keys, f.id), keys, cur) }; }, function () { picked = {}; showToast(T('l.moved', { n: Object.keys(keys).length, name: f.name })); });
         }, cur);
       });
       bar.appendChild(moveBtn);
       bar.appendChild(el('button', { class: 'btn sm', type: 'button', disabled: !n, onclick: function () {
         var keys = pickedKeys().keys; picked = {};
         mutate(function (lib) { return { lib: dropTag(lib, keys, cur) }; });
-      } }, [ic('minus'), el('span', { text: 'إخراج من هذا المجلد' })]));
+      } }, [ic('minus'), el('span', { text: T('l.takeOut') })]));
     }
     bar.appendChild(el('button', { class: 'btn sm', type: 'button', disabled: !n, onclick: function () {
       var sel = items.filter(function (r) { return picked[keyOf(r)]; });
       startDownload(sel, view !== 'all' ? viewName() : '');
-    } }, [ic('download-simple'), el('span', { text: 'تنزيل المحدد' })]));
-    bar.appendChild(el('button', { class: 'btn sm danger', type: 'button', disabled: !n, onclick: function () { removeReels(Object.keys(pickedKeys().keys)); } }, [ic('trash'), el('span', { text: 'إزالة من المكتبة' })]));
+    } }, [ic('download-simple'), el('span', { text: T('l.dlPicked') })]));
+    bar.appendChild(el('button', { class: 'btn sm danger', type: 'button', disabled: !n, onclick: function () { removeReels(Object.keys(pickedKeys().keys)); } }, [ic('trash'), el('span', { text: T('c.removeLib') })]));
   }
   $('selBtn').addEventListener('click', function () { selectMode = !selectMode; picked = {}; closeMenu(); render(); });
 
@@ -451,7 +433,7 @@
     undo = removed;
     keys.forEach(function (k) { delete picked[k]; });
     mutate(function (lib) { return { lib: lib.filter(function (r) { return !set[keyOf(r)]; }) }; });
-    showToast(removed.length === 1 ? 'أُزيل الريل من المكتبة.' : 'أُزيل ' + removed.length + ' من المكتبة.', 'تراجع', function () {
+    showToast(removed.length === 1 ? T('l.removed1') : T('l.removedN', { n: removed.length }), T('c.undo'), function () {
       if (!undo) return;
       var back = undo; undo = null;
       mutate(function (lib) {
@@ -475,10 +457,10 @@
   var dlParts = null;
   function startDownload(reels, folderName) {
     if (!reels.length) return;
-    if (job && !job.finished) { showToast('يوجد تنزيل جارٍ، انتظر حتى ينتهي.'); return; }
+    if (job && !job.finished) { showToast(T('l.dlBusy')); return; }
     var clean = reels.map(function (r) { var c = {}; for (var k in r) if (k !== 'transcript') c[k] = r[k]; return c; });
     chrome.runtime.sendMessage({ type: 'AR_DOWNLOAD', reels: clean, folderName: folderName }, function (res) {
-      if (chrome.runtime.lastError || !res || !res.ok) { showToast((res && res.error) || 'تعذّر بدء التنزيل.'); return; }
+      if (chrome.runtime.lastError || !res || !res.ok) { showToast((res && res.error) || T('l.dlFail')); return; }
       job = { jobId: res.jobId, name: folderName, done: 0, total: reels.length, failed: [], finished: false };
       drawDl(); render();
     });
@@ -491,16 +473,16 @@
       box.textContent = '';
       dlParts = { jobId: job.jobId, finished: job.finished, t: el('span', { class: 't' }), fill: el('i'), list: el('ul') };
       var head = el('div', { class: 'head' }, [ic('download-simple'), dlParts.t]);
-      if (job.finished) head.appendChild(el('button', { class: 'btn sm', type: 'button', text: 'إغلاق', onclick: function () { job = null; dlParts = null; drawDl(); render(); } }));
+      if (job.finished) head.appendChild(el('button', { class: 'btn sm', type: 'button', text: T('c.close'), onclick: function () { job = null; dlParts = null; drawDl(); render(); } }));
       box.appendChild(head);
       box.appendChild(el('div', { class: 'bar' }, [dlParts.fill]));
-      box.appendChild(el('div', { class: 'where', text: 'في مجلد التنزيلات: تحليل الريلز/' + (job.name ? job.name + '/' : '') + ' · بصيغة الملف الأصلية كما يقدّمها إنستغرام' }));
+      box.appendChild(el('div', { class: 'where', text: T('l.where', { dir: T('c.dlRoot') + '/' + (job.name ? job.name + '/' : '') }) }));
       box.appendChild(dlParts.list);
     }
     var ok = job.done - job.failed.length;
     dlParts.t.textContent = job.finished
-      ? (job.failed.length ? 'انتهى التنزيل: نجح ' + ok + ' من ' + job.total + '، وفشل ' + job.failed.length : 'اكتمل التنزيل: ' + job.total + ' من ' + job.total)
-      : 'تنزيل ' + Math.min(job.done + 1, job.total) + ' من ' + job.total;
+      ? (job.failed.length ? T('l.dlDoneFail', { ok: ok, total: job.total, failed: job.failed.length }) : T('l.dlDone', { total: job.total }))
+      : T('l.dlProg', { i: Math.min(job.done + 1, job.total), total: job.total });
     dlParts.fill.style.width = (job.total ? Math.round(job.done / job.total * 100) : 0) + '%';
     if (dlParts.list.childNodes.length !== job.failed.length) {
       dlParts.list.textContent = '';
@@ -542,5 +524,13 @@
 
   $('q').addEventListener('input', render);
   $('sort').addEventListener('change', render);
-  load();
+  // language: re-apply static strings and rebuild every card / panel in the new language (no reload)
+  var started = false;
+  ARP.wire(function () {
+    if (!started) { started = true; load(); return; }
+    for (var ck in cards) if (cards[ck].node.parentNode) cards[ck].node.remove();
+    cards = {}; closeMenu(); dlParts = null;
+    if (!$('toast').hidden) hideToast();
+    render(); drawDl();
+  });
 })();

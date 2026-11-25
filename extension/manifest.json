@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "تحليل الريلز — Reels Analysis",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Personal Instagram reel research: outlier grid, reel stats, folders, downloads, and full video control.",
   "permissions": [
     "storage",
@@ -49,6 +49,8 @@
       ],
       "js": [
         "lib/phosphor/icons.js",
+        "lib/i18n.js",
+        "lib/i18n-app.js",
         "src/data/bridge.js",
         "src/ui/app.js"
       ],
@@ -59,6 +61,8 @@
         "https://www.instagram.com/*"
       ],
       "js": [
+        "lib/i18n.js",
+        "lib/i18n-app.js",
         "src/video/overlay.js"
       ],
       "run_at": "document_idle"

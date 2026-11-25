@@ -12,6 +12,17 @@
   const host = location.hostname;
   const platform = /(^|\.)instagram\.com$/.test(host) ? 'instagram' : /(^|\.)youtube\.com$/.test(host) ? 'youtube' : null;
 
+  // messages in the user's language: through ARI18N (lib/i18n.js loads before this file on Instagram), local fallback otherwise
+  const MSG = {
+    ar: { 'b.notIg': 'هذه الصفحة ليست إنستغرام أو يوتيوب.', 'b.timeout': 'انتهت المهلة ({s} ثانية) دون رد. حدّث الصفحة ثم أعد المحاولة.' },
+    en: { 'b.notIg': 'This page is not Instagram or YouTube.', 'b.timeout': 'No reply within {s} seconds. Reload the page and try again.' }
+  };
+  if (window.ARI18N) window.ARI18N.add(MSG);
+  function tr(key, vars) {
+    if (window.ARI18N) return window.ARI18N.t(key, vars);
+    return String(MSG.ar[key] || key).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] != null ? vars[k] : m));
+  }
+
   window.addEventListener('message', (ev) => {
     if (ev.source !== window) return;
     const d = ev.data;
@@ -32,7 +43,7 @@
   function call(fn, ...args) {
     if (!platform) {
       if (fn === 'pageInfo') return Promise.resolve({ platform: null, kind: 'other', url: location.href });
-      return Promise.reject(new Error('هذه الصفحة ليست إنستغرام أو يوتيوب.'));
+      return Promise.reject(new Error(tr('b.notIg')));
     }
     return new Promise((resolve, reject) => {
       const id = 'ar' + Date.now().toString(36) + '_' + (++seq);
@@ -40,7 +51,7 @@
       const ms = fn === 'getProfileReels' ? 240000 : TIMEOUT;
       const timer = setTimeout(() => {
         pending.delete(id);
-        reject(new Error('انتهت المهلة (' + Math.round(ms / 1000) + ' ثانية) دون رد. حدّث الصفحة ثم أعد المحاولة.'));
+        reject(new Error(tr('b.timeout', { s: Math.round(ms / 1000) })));
       }, ms);
       pending.set(id, { resolve, reject, timer });
       window.postMessage({ __ar: 'req', id, fn, args }, '*');

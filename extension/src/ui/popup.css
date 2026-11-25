@@ -14,7 +14,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .head { display: flex; align-items: center; gap: 12px; }
 .logo { width: 40px; height: 40px; border-radius: 10px; }
 .ht { display: flex; flex-direction: column; min-width: 0; }
-.name { font-weight: 700; font-size: 15px; text-align: right; }
+.name { font-weight: 700; font-size: 15px; text-align: start; }
 .status { color: #8A919C; font-size: 13px; }
 .status.ok { color: #2A2E36; }
 
@@ -53,5 +53,13 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .keysblock summary { list-style: none; cursor: pointer; }
 .keysblock summary::-webkit-details-marker { display: none; }
 .keysblock .caret { margin-inline-start: auto; }
+[dir="ltr"] .keysblock .caret { transform: scaleX(-1); }
 .keysblock[open] .caret { transform: rotate(-90deg); }
 .keysblock:not([open]) { gap: 0; }
+
+.langrow { display: flex; align-items: center; gap: 8px; color: #8A919C; font-size: 13px; }
+.langrow .lt { color: #2A2E36; font-weight: 500; }
+.seg { margin-inline-start: auto; display: flex; background: #FFFFFF; border: 1px solid #E3E8EF; border-radius: 10px; padding: 2px; gap: 2px; }
+.seg button { height: 28px; padding: 0 10px; border-radius: 8px; color: #2A2E36; font-size: 13px; }
+.seg button:hover { color: #0F6BFF; }
+.seg button.on { background: #0F6BFF; color: #FFFFFF; }

@@ -17,6 +17,10 @@
   var DEFAULT_FPS = 30;
   var LRM = '\u200E';
   function ltr(t) { return '\u2066' + t + '\u2069'; } // keep '+5' / '1.5×' left-to-right inside Arabic toasts
+  // translations: lib/i18n.js + lib/i18n-app.js (vc.* keys). Without them (not loaded) the key itself shows, nothing breaks.
+  var I = window.ARI18N || { t: function (k, v) { return String(k).replace(/\{(\w+)\}/g, function (m, x) { return v && v[x] != null ? v[x] : m; }); },
+    dir: function () { return 'rtl'; }, ready: Promise.resolve(), onChange: function () {} };
+  function T(k, v) { return I.t(k, v); }
 
   // Phosphor Regular paths (MIT, @phosphor-icons/core assets/regular/*.svg)
   var P = {
@@ -282,8 +286,8 @@
     toggle: function () {
       return act(function (v) {
         guardSound(v);
-        if (v.paused || v.ended) { var p = v.play(); if (p && p.catch) p.catch(function () {}); toast('تشغيل'); }
-        else { v.pause(); toast('إيقاف مؤقت'); }
+        if (v.paused || v.ended) { var p = v.play(); if (p && p.catch) p.catch(function () {}); toast(T('vc.t.play')); }
+        else { v.pause(); toast(T('vc.t.pause')); }
       });
     },
     seek: function (s) {
@@ -291,7 +295,7 @@
       return act(function (v) {
         var d = durationOf(v);
         v.currentTime = clamp(v.currentTime + s, 0, d || v.currentTime + Math.max(s, 0));
-        toast(ltr((s > 0 ? '+' : '−') + Math.abs(s)) + ' ث');
+        toast(T('vc.t.sec', { x: ltr((s > 0 ? '+' : '−') + Math.abs(s)) }));
       });
     },
     jump: function (ratio) {
@@ -307,7 +311,7 @@
         if (!v.paused) v.pause();
         var fps = fpsOf(v), d = durationOf(v);
         v.currentTime = clamp(v.currentTime + f / fps, 0, d || Infinity);
-        toast(ltr((f > 0 ? '+' : '−') + Math.abs(f)) + ' فريم');
+        toast(T(Math.abs(f) === 1 ? 'vc.t.frame' : 'vc.t.frames', { x: ltr((f > 0 ? '+' : '−') + Math.abs(f)) }));
       });
     },
     speed: function (r) {
@@ -336,7 +340,7 @@
         soundGuard = null;
         v.volume = next;
         v.muted = next === 0;
-        toast(next === 0 ? 'كتم' : 'الصوت ' + ltr(Math.round(next * 100) + '%'));
+        toast(next === 0 ? T('vc.t.muted') : T('vc.t.volume', { x: ltr(Math.round(next * 100) + '%') }));
       });
     },
     mute: function () {
@@ -344,14 +348,14 @@
         soundGuard = null;
         v.muted = !v.muted;
         if (!v.muted && v.volume === 0) v.volume = 0.5;
-        toast(v.muted ? 'كتم' : 'الصوت ' + ltr(Math.round(v.volume * 100) + '%'));
+        toast(v.muted ? T('vc.t.muted') : T('vc.t.volume', { x: ltr(Math.round(v.volume * 100) + '%') }));
       });
     },
     loop: function (on) {
       return act(function (v) {
         loopOn = on == null ? !v.loop : !!on;
         v.loop = loopOn;
-        toast(loopOn ? 'تكرار: يعمل' : 'تكرار: متوقف');
+        toast(loopOn ? T('vc.t.loopOn') : T('vc.t.loopOff'));
       });
     },
     // The bar under the reel is always visible now, so "pinned" is the default: kept as a harmless no-op
@@ -393,7 +397,7 @@
     '.h2 .loopb{display:none}',
     '.h4 .time,.h4 .sep1{display:none}',
     '.h5 .fbk,.h5 .ffw{display:none}',
-    '.toast{position:fixed;display:none;direction:rtl;pointer-events:none;background:' + IG('primary-text', '0,0,0') + ';color:' + IG('primary-background', '255,255,255') + ';border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}',
+    '.toast{position:fixed;display:none;pointer-events:none;background:' + IG('primary-text', '0,0,0') + ';color:' + IG('primary-background', '255,255,255') + ';border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}',
     '.toast.on{display:block}'
   ].join('');
 
@@ -442,21 +446,21 @@
     shadow = host.attachShadow({ mode: 'closed' });
     var style = document.createElement('style'); style.textContent = CSS;
     var row = h('div', 'row', null, [
-      btn('playb', 'play', 'تشغيل / إيقاف (مسافة أو K)'),
-      btn('backb', 'back', 'رجوع 5 ثوانٍ (J أو ←) — مع Shift: 10 ثوانٍ', '5'),
-      btn('fwdb', 'fwd', 'تقديم 5 ثوانٍ (L أو →) — مع Shift: 10 ثوانٍ', '5'),
-      btn('fbk sm', 'caretL', 'فريم للخلف (,) — مع Shift: 10 فريمات'),
-      btn('ffw sm', 'caretR', 'فريم للأمام (.) — مع Shift: 10 فريمات'),
+      btn('playb', 'play', ''),
+      btn('backb', 'back', '', '5'),
+      btn('fwdb', 'fwd', '', '5'),
+      btn('fbk sm', 'caretL', ''),
+      btn('ffw sm', 'caretR', ''),
       h('span', 'sep sep1'), h('span', 'time', null, ['0:00 / 0:00']),
       h('span', 'sp'),
-      h('button', 'spd', { type: 'button', title: 'السرعة: اضغط للتسريع 0.25 (])، ومع Shift للإبطاء 0.25 ([)، والنقر المزدوج أو الزر الأيمن للرجوع إلى 1× (\\)', 'aria-label': 'السرعة' }, ['1×']),
+      h('button', 'spd', { type: 'button' }, ['1×']),
       h('span', 'sep sep2'),
-      btn('muteb', 'vol', 'كتم / تشغيل الصوت (M)'),
-      slider('vol', 'مستوى الصوت (↑ / ↓)'),
-      btn('loopb sm', 'repeat', 'تكرار المقطع')
+      btn('muteb', 'vol', ''),
+      slider('vol', ''),
+      btn('loopb sm', 'repeat', '')
     ]);
     shadow.appendChild(style);
-    shadow.appendChild(h('div', 'bar', null, [slider('scrub', 'اسحب للتنقّل في المقطع', true), row]));
+    shadow.appendChild(h('div', 'bar', null, [slider('scrub', '', true), row]));
     shadow.appendChild(h('div', 'toast'));
     var q = function (s) { return shadow.querySelector(s); };
     bar = q('.bar'); toastEl = q('.toast');
@@ -469,6 +473,8 @@
     };
     ui.playPath = ui.play.querySelector('path');
     ui.mutePath = ui.mute.querySelector('path');
+    paintLabels();
+    I.onChange(paintLabels);   // language switched (here or in another tab): tooltips + toast direction, no rebuild
 
     // Clicks must never reach the page (Instagram click-catchers toggle play/mute on click).
     ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'touchstart', 'touchend', 'wheel', 'keydown']
@@ -502,6 +508,14 @@
       target.muted = ratio <= 0.001;
     });
     mount();
+  }
+  // tooltips / aria-labels in the current language (the control row itself stays LTR in both languages)
+  function paintLabels() {
+    var set = function (el, key) { if (!el) return; var t = T(key); el.title = t; if (el.tagName === 'BUTTON') el.setAttribute('aria-label', t); };
+    set(ui.play, 'vc.play'); set(ui.back, 'vc.back'); set(ui.fwd, 'vc.fwd'); set(ui.fbk, 'vc.fbk'); set(ui.ffw, 'vc.ffw');
+    set(ui.mute, 'vc.mute'); set(ui.vol, 'vc.volume'); set(ui.loop, 'vc.loop'); set(ui.scrub, 'vc.scrub');
+    if (ui.spd) { ui.spd.title = T('vc.speedTitle'); ui.spd.setAttribute('aria-label', T('vc.speed')); }
+    if (toastEl) toastEl.setAttribute('dir', I.dir());
   }
   function dragSlider(el, apply) {
     var ratioAt = function (e) { var r = el.getBoundingClientRect(); return clamp((e.clientX - r.left) / Math.max(1, r.width), 0, 1); };
@@ -906,7 +920,8 @@
   }
 
   try {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
-    else init();
+    // build once the stored language is known (tooltips are right from the first paint)
+    var start = function () { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true }); else init(); };
+    Promise.resolve(I.ready).then(start, start);
   } catch (e) {}
 })();

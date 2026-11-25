@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>تحليل المحتوى — تحليل الريلز</title>
+  <title data-i18n="r.title">تحليل المحتوى — تحليل الريلز</title>
   <link rel="icon" href="../../icons/icon-32.png">
   <link rel="stylesheet" href="research.css">
 </head>
@@ -12,77 +12,77 @@
     <div class="brand">
       <img src="../../icons/icon-48.png" alt="">
       <div>
-        <h1>تحليل المحتوى</h1>
+        <h1 data-i18n="r.h1">تحليل المحتوى</h1>
         <div class="sub" id="sub"></div>
       </div>
     </div>
     <div class="tools">
-      <button class="btn" id="refreshAll" type="button"><span class="ic" data-ic="arrow-clockwise"></span><span>تحديث الكل</span></button>
-      <button class="btn" id="exCsv" type="button"><span class="ic" data-ic="download-simple"></span><span>تصدير CSV</span></button>
+      <button class="btn" id="refreshAll" type="button"><span class="ic" data-ic="arrow-clockwise"></span><span data-i18n="r.refreshAll">تحديث الكل</span></button>
+      <button class="btn" id="exCsv" type="button"><span class="ic" data-ic="download-simple"></span><span data-i18n="r.exCsv">تصدير CSV</span></button>
     </div>
   </header>
 
   <main>
     <section class="panel addp">
-      <div class="ptitle"><span class="ic" data-ic="user-circle"></span><span>الحسابات</span></div>
+      <div class="ptitle"><span class="ic" data-ic="user-circle"></span><span data-i18n="r.accounts">الحسابات</span></div>
       <div class="addrow">
         <textarea id="addIn" rows="2" dir="ltr" placeholder="garyvee, mkbhd, https://www.instagram.com/hormozi/"></textarea>
-        <button class="btn primary" id="addBtn" type="button"><span class="ic" data-ic="plus"></span><span>إضافة وجلب</span></button>
+        <button class="btn primary" id="addBtn" type="button"><span class="ic" data-ic="plus"></span><span data-i18n="r.addBtn">إضافة وجلب</span></button>
       </div>
-      <div class="hint">اكتب اسم المستخدم أو رابط الحساب. يمكنك لصق عدة حسابات معًا، تفصل بينها مسافة أو فاصلة أو سطر جديد.</div>
+      <div class="hint" data-i18n="r.hint">اكتب اسم المستخدم أو رابط الحساب. يمكنك لصق عدة حسابات معًا، تفصل بينها مسافة أو فاصلة أو سطر جديد.</div>
       <div class="chips" id="chips"></div>
     </section>
 
     <div class="prog" id="prog" hidden>
-      <div class="head"><span class="ic" data-ic="arrow-clockwise"></span><span class="t" id="progT"></span><button class="btn sm" id="stopBtn" type="button"><span class="ic" data-ic="x"></span><span>إيقاف</span></button></div>
+      <div class="head"><span class="ic" data-ic="arrow-clockwise"></span><span class="t" id="progT"></span><button class="btn sm" id="stopBtn" type="button"><span class="ic" data-ic="x"></span><span data-i18n="r.stop">إيقاف</span></button></div>
       <div class="bar"><i id="progBar"></i></div>
     </div>
     <div class="msg" id="msg" hidden></div>
 
     <div class="filters">
-      <label class="sel"><span class="lb">الترتيب</span>
+      <label class="sel"><span class="lb" data-i18n="r.sort">الترتيب</span>
         <select id="sort">
-          <option value="views">المشاهدات</option>
-          <option value="shares">المشاركات</option>
-          <option value="outlier">نقاط التميّز</option>
-          <option value="shareRate">نسبة المشاركة (من المشاهدات)</option>
-          <option value="shareOutlier">تميّز المشاركات</option>
-          <option value="reposts">إعادة النشر</option>
-          <option value="likes">الإعجابات</option>
-          <option value="comments">التعليقات</option>
-          <option value="takenAt">الأحدث</option>
+          <option value="views" data-i18n="c.views">المشاهدات</option>
+          <option value="shares" data-i18n="c.shares">المشاركات</option>
+          <option value="outlier" data-i18n="c.outlier">نقاط التميّز</option>
+          <option value="shareRate" data-i18n="r.oShareRate">نسبة المشاركة (من المشاهدات)</option>
+          <option value="shareOutlier" data-i18n="r.oShareOutlier">تميّز المشاركات</option>
+          <option value="reposts" data-i18n="r.oReposts">إعادة النشر</option>
+          <option value="likes" data-i18n="c.likes">الإعجابات</option>
+          <option value="comments" data-i18n="c.comments">التعليقات</option>
+          <option value="takenAt" data-i18n="r.oNewest">الأحدث</option>
         </select>
       </label>
-      <label class="sel"><span class="lb">التميّز</span>
+      <label class="sel"><span class="lb" data-i18n="r.outlierLb">التميّز</span>
         <select id="minOutlier">
-          <option value="0">الكل</option>
-          <option value="2">2× فأكثر</option>
-          <option value="3">3× فأكثر</option>
-          <option value="5">5× فأكثر</option>
-          <option value="10">10× فأكثر</option>
+          <option value="0" data-i18n="c.all">الكل</option>
+          <option value="2" data-i18n="r.x2">2× فأكثر</option>
+          <option value="3" data-i18n="r.x3">3× فأكثر</option>
+          <option value="5" data-i18n="r.x5">5× فأكثر</option>
+          <option value="10" data-i18n="r.x10">10× فأكثر</option>
         </select>
       </label>
-      <label class="sel"><span class="lb">الفترة</span>
+      <label class="sel"><span class="lb" data-i18n="r.period">الفترة</span>
         <select id="period">
-          <option value="all">الكل</option>
-          <option value="30">آخر 30 يومًا</option>
-          <option value="90">آخر 90 يومًا</option>
-          <option value="365">آخر سنة</option>
-          <option value="range">من تاريخ إلى تاريخ</option>
+          <option value="all" data-i18n="c.all">الكل</option>
+          <option value="30" data-i18n="r.p30">آخر 30 يومًا</option>
+          <option value="90" data-i18n="r.p90">آخر 90 يومًا</option>
+          <option value="365" data-i18n="r.p365">آخر سنة</option>
+          <option value="range" data-i18n="r.pRange">من تاريخ إلى تاريخ</option>
         </select>
       </label>
-      <label class="sel" id="rangeBox" hidden><span class="lb">من</span><input type="date" id="dFrom"></label>
-      <label class="sel" id="rangeBox2" hidden><span class="lb">إلى</span><input type="date" id="dTo"></label>
-      <label class="sel"><span class="lb">لكل حساب</span>
+      <label class="sel" id="rangeBox" hidden><span class="lb" data-i18n="r.from">من</span><input type="date" id="dFrom"></label>
+      <label class="sel" id="rangeBox2" hidden><span class="lb" data-i18n="r.to">إلى</span><input type="date" id="dTo"></label>
+      <label class="sel"><span class="lb" data-i18n="r.perAcc">لكل حساب</span>
         <select id="limit">
-          <option value="30">30 ريل</option>
-          <option value="60">60 ريل</option>
-          <option value="120">120 ريل</option>
-          <option value="500">كل الريلز</option>
-          <option value="custom">مخصص…</option>
+          <option value="30" data-i18n="r.l30">30 ريل</option>
+          <option value="60" data-i18n="r.l60">60 ريل</option>
+          <option value="120" data-i18n="r.l120">120 ريل</option>
+          <option value="500" data-i18n="r.lAll">كل الريلز</option>
+          <option value="custom" data-i18n="r.lCustom">مخصص…</option>
         </select>
       </label>
-      <label class="sel" id="limitBox" hidden><span class="lb">العدد</span><input type="number" id="limitN" min="1" max="500" dir="ltr" style="width:80px"></label>
+      <label class="sel" id="limitBox" hidden><span class="lb" data-i18n="r.count">العدد</span><input type="number" id="limitN" min="1" max="500" dir="ltr" style="width:80px"></label>
       <span class="fnote" id="fnote"></span>
     </div>
 
@@ -92,6 +92,8 @@
   </main>
 
   <script src="../../lib/phosphor/icons.js"></script>
+  <script src="../../lib/i18n.js"></script>
+  <script src="../../lib/i18n-pages.js"></script>
   <script src="research.js"></script>
 </body>
 </html>

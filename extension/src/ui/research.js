@@ -7,7 +7,9 @@
   var IG_HOME = 'https://www.instagram.com/';
   var $ = function (id) { return document.getElementById(id); };
   var RESERVED = ['reel', 'reels', 'p', 'tv', 'explore', 'stories', 'direct', 'accounts', 'about', 'developer', 'legal', 'web', 'api', 'graphql', 'ajax', 'challenge', 'emails', 'session', 'login', 'privacy', 'terms', 'directory', 'static', 'oauth', 'nametag', 'lite', 'your_activity', 'topics'];
-  var RATE_RE = /كثرة طلبات|أوقف الطلبات|رفض الطلب|429|rate.?limit/i;
+  // matches ig.js rate-limit / refusal messages in both languages
+  var RATE_RE = /كثرة طلبات|أوقف الطلبات|رفض الطلب|429|rate.?limit|too many requests|paused requests|rejected the request/i;
+  var T = window.ARI18N.t, ARP = window.ARP;
 
   var state = { creators: [], settings: { sort: 'views', limit: 30, minOutlier: 0, period: 'all', from: '', to: '' } };
   var selected = {};            // username -> true (empty = all)
@@ -30,29 +32,10 @@
     return n;
   }
   function ic(name) { return el('span', { class: 'ic', html: PH[name] || '' }); }
-  function fmtNum(n) {
-    if (n == null || isNaN(n)) return '—';
-    if (n < 0) return 'مخفية';
-    function f(x) { var s = x.toFixed(1); return s.slice(-2) === '.0' ? s.slice(0, -2) : s; }
-    if (n >= 1e9) return f(n / 1e9) + 'B';
-    if (n >= 1e6) return f(n / 1e6) + 'M';
-    if (n >= 1e3) return f(n / 1e3) + 'K';
-    return String(Math.round(n));
-  }
+  var fmtNum = ARP.fmtNum;
   function fmtPct(p) { if (p == null || isNaN(p)) return '—'; return (p >= 10 ? String(Math.round(p)) : p >= 0.1 ? (Math.round(p * 10) / 10).toFixed(1).replace(/\.0$/, '') : '<0.1') + '%'; }
   function fmtOutlier(o) { if (o == null || isNaN(o)) return '—'; if (o >= 0 && o < 0.1) return '<0.1×'; /* a real ratio is never 0 (0 views → null) */ return (o >= 10 ? String(Math.round(o)) : (Math.round(o * 10) / 10).toFixed(1).replace(/\.0$/, '')) + '×'; }
-  var UNITS = [[31536000, 'سنة', 'سنتين', 'سنوات', 'سنة'], [2592000, 'شهر', 'شهرين', 'أشهر', 'شهرًا'], [604800, 'أسبوع', 'أسبوعين', 'أسابيع', 'أسبوعًا'],
-    [86400, 'يوم', 'يومين', 'أيام', 'يومًا'], [3600, 'ساعة', 'ساعتين', 'ساعات', 'ساعة'], [60, 'دقيقة', 'دقيقتين', 'دقائق', 'دقيقة']];
-  function relTime(ts) {
-    if (!ts) return '';
-    var d = Math.max(0, Date.now() / 1000 - ts);
-    for (var i = 0; i < UNITS.length; i++) {
-      var u = UNITS[i];
-      if (d >= u[0]) { var n = Math.floor(d / u[0]); return n === 1 ? 'قبل ' + u[1] : n === 2 ? 'قبل ' + u[2] : n <= 10 ? 'قبل ' + n + ' ' + u[3] : 'قبل ' + n + ' ' + u[4]; }
-    }
-    return 'الآن';
-  }
-  function countWord(n, one, two, few, many) { return n === 1 ? one : n === 2 ? two : (n >= 3 && n <= 10) ? few : many; }
+  function relTime(ts) { return ARP.relTime(ts, ''); }
   function keyOf(r) { return (r.platform || '') + ':' + (r.code || r.id || r.url); }
   function iso(ms) { return ms ? new Date(ms).toISOString() : ''; }
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -140,7 +123,7 @@
     await sleep(2000);
     for (var k = 0; k < 4; k++) { if (await answers(tab.id)) return { id: tab.id, opened: true }; await sleep(1500); }
     try { await chrome.tabs.remove(tab.id); } catch (e) { /* already closed */ }
-    throw new Error('لم يستجب تبويب إنستغرام. افتح instagram.com في تبويب ثم أعد المحاولة.');
+    throw new Error(T('r.errNoTab'));
   }
   async function getIgTab() {
     var tabs = await chrome.tabs.query({ url: 'https://www.instagram.com/*' });
@@ -161,8 +144,8 @@
   function callReels(tabId, u, noScroll) {
     // noScroll: never scroll a tab the user is reading (only our own window may be scrolled)
     return msgTab(tabId, { type: 'AR_DATA', fn: 'getProfileReels', args: [u, { limit: Number(state.settings.limit) || 60, noScroll: !!noScroll }] }, 240000)
-      .then(function (r) { return r || { ok: false, error: 'لم يصل رد من تبويب إنستغرام.' }; },
-        function (e) { return { ok: false, conn: true, error: e.message === 'timeout' ? 'انتهت مهلة الجلب.' : 'انقطع الاتصال بتبويب إنستغرام.' }; });
+      .then(function (r) { return r || { ok: false, error: T('r.noReply') }; },
+        function (e) { return { ok: false, conn: true, error: e.message === 'timeout' ? T('r.timeout') : T('r.disconnected') }; });
   }
 
   // ---------------- fetching (one creator at a time, 2–3 s apart)
@@ -173,7 +156,7 @@
     job = { queue: names, i: 0, stop: false, current: '' };
     var lines = [], rateHit = false, tab = null, worker = null, useWorker = false, okCount = 0, partials = [];
     showMsg(null);
-    paintProgress('يجهّز تبويب إنستغرام…');
+    progKey = 'r.preparing'; paintProgress();
     renderChips();
     try {
       tab = await getIgTab();
@@ -195,7 +178,7 @@
             if (res2.ok && (!res.ok || (res2.result.reels || []).length >= (res.result.reels || []).length)) res = res2;
             else if (res2.ok || !res || res.ok === undefined || useWorker) res = res.ok ? res : res2;
             else if (RATE_RE.test(res2.error || '')) res = res2;
-          } else if (!res) res = { ok: false, error: 'لم يستجب تبويب إنستغرام.' };
+          } else if (!res) res = { ok: false, error: T('r.tabNoAnswer') };
         }
         var c = findCreator(u);
         if (!c) { c = { username: u, addedAt: Date.now(), lastFetched: 0, profile: null, reels: [], median: 0, note: '' }; state.creators.push(c); }
@@ -212,7 +195,7 @@
           okCount++;
           if (r.note) lines.push({ u: c.username, t: r.note });
         } else {
-          var em = (res && res.error) || 'تعذّر الجلب.';
+          var em = (res && res.error) || T('r.fetchFail');
           c.error = em;
           lines.push({ u: u, t: em, e: true });
           if (RATE_RE.test(em)) { rateHit = true; }
@@ -231,11 +214,12 @@
     job = null;
     paintProgress();
     var head;
-    if (rateHit) head = { t: 'توقّف الجلب: إنستغرام أوقف الطلبات مؤقتًا بسبب كثرتها. حُفظ ما جُلب (' + okCount + ' من ' + total + '). انتظر بضع دقائق ثم اضغط «تحديث» للبقية.', e: true };
-    else if (stopped) head = { t: 'أوقفتَ الجلب. حُفظ ما جُلب (' + okCount + ' من ' + total + ').' };
-    else if (okCount === total) head = { t: 'اكتمل الجلب: ' + okCount + ' من ' + total + '.' };
-    else head = { t: 'انتهى الجلب: نجح ' + okCount + ' من ' + total + '.', e: okCount === 0 };
-    if (partials.length) lines.unshift({ us: partials, t: 'بدون تسجيل الدخول يعطي إنستغرام نحو 12 ريل لكل حساب وبلا تواريخ نشر. سجّل الدخول في إنستغرام بهذا المتصفح ثم حدّث لجلب المزيد.' });
+    var nums = { ok: okCount, total: total };
+    if (rateHit) head = { k: 'r.rateStop', v: nums, e: true };
+    else if (stopped) head = { k: 'r.stopped', v: nums };
+    else if (okCount === total) head = { k: 'r.done', v: nums };
+    else head = { k: 'r.finished', v: nums, e: okCount === 0 };
+    if (partials.length) lines.unshift({ us: partials, k: 'r.partialNote' });
     showMsg([head].concat(lines), rateHit || okCount < total);
     renderAll();
   }
@@ -248,21 +232,27 @@
       live = m.data; paintProgress();
     });
   } catch (e) { }
-  function paintProgress(text) {
+  var progKey = null;   // a fixed progress text (preparing / stopping) instead of the counter
+  function paintProgress() {
     var p = $('prog');
-    if (!job) { p.hidden = true; return; }
+    if (!job) { p.hidden = true; progKey = null; return; }
     p.hidden = false;
     var n = job.queue.length, i = Math.min(job.i + 1, n);
+    var text = progKey && T(progKey);
+    if (progKey === 'r.preparing' && job.current) { progKey = null; text = ''; }
     var extra = live && job && String(live.username || '').toLowerCase() === String(job.current || '').toLowerCase()
-      ? ' — ' + live.step + ': ' + live.count + (live.limit >= 500 ? '' : ' من ' + live.limit) + ' ريل' : '';
-    $('progT').textContent = text || ('جلب ' + i + ' من ' + n + ': @' + job.current + extra);
+      ? ' — ' + T(live.limit >= 500 ? 'r.liveAll' : 'r.live', { step: live.step, count: live.count, limit: live.limit }) : '';
+    $('progT').textContent = text || (T('r.prog', { i: i, n: n, u: job.current }) + extra);
     $('progBar').style.width = (text ? 0 : Math.round(((i - 1) / n) * 100)) + '%';
   }
+  // lines: [{t: text | k: i18n key + v: vars, u?: username, us?: [usernames], e?: error}], lines.act = action node
+  var lastMsg = null;
   function showMsg(lines, bad) {
     var m = $('msg'); m.textContent = '';
+    lastMsg = lines && lines.length ? { lines: lines, bad: bad } : null;
     if (!lines || !lines.length) { m.hidden = true; return; }
     m.className = 'msg' + (bad ? ' bad' : '');
-    lines.forEach(function (l) { m.appendChild(el('div', { class: 'l' + (l.e ? ' e' : '') }, [ic(l.e ? 'warning-circle' : 'check'), el('span', null, (l.us ? ['نتيجة جزئية لـ '].concat(l.us.reduce(function (a, u, i) { if (i) a.push('، '); a.push(el('bdi', { dir: 'ltr', text: '@' + u })); return a; }, []), [': ']) : []).concat([l.u ? el('bdi', { dir: 'ltr', text: '@' + l.u }) : null, l.u ? ': ' : '', l.t]))])); });
+    lines.forEach(function (l) { m.appendChild(el('div', { class: 'l' + (l.e ? ' e' : '') }, [ic(l.e ? 'warning-circle' : 'check'), el('span', null, (l.us ? [T('r.partialFor')].concat(l.us.reduce(function (a, u, i) { if (i) a.push(window.ARI18N.lang() === 'ar' ? '\u060c ' : ', '); a.push(el('bdi', { dir: 'ltr', text: '@' + u })); return a; }, []), [': ']) : []).concat([l.u ? el('bdi', { dir: 'ltr', text: '@' + l.u }) : null, l.u ? ': ' : '', l.k ? T(l.k, l.v) : l.t]))])); });
     if (lines.act) m.appendChild(lines.act);
     m.hidden = false;
   }
@@ -272,7 +262,7 @@
     var names = parseNames($('addIn').value);
     if (reelCodesFromInput.length) {
       // reel links: find whose reel it is, then add that creator
-      showMsg([{ t: 'أتعرّف على أصحاب روابط الريلز (' + reelCodesFromInput.length + ')…' }]);
+      showMsg([{ k: 'r.lookup', v: { n: reelCodesFromInput.length } }]);
       try {
         var tab = await getIgTab();
         for (var i = 0; i < reelCodesFromInput.length; i++) {
@@ -284,7 +274,7 @@
       } catch (e) { }
       showMsg(null);
     }
-    if (!names.length) { showMsg([{ t: 'لم أجد اسم مستخدم صالحًا. اكتب مثل: garyvee أو رابط الحساب.', e: true }], true); return; }
+    if (!names.length) { showMsg([{ k: 'r.noName', e: true }], true); return; }
     names.forEach(function (u) {
       if (!findCreator(u)) state.creators.push({ username: u, addedAt: Date.now(), lastFetched: 0, profile: null, reels: [], median: 0, note: '' });
     });
@@ -297,12 +287,12 @@
     state.creators.splice(idx, 1); delete selected[c.username];
     undoCreator = { c: c, idx: idx };
     persist(); renderAll();
-    var lines = [{ t: 'أُزيل @' + c.username + ' من القائمة.' }];
+    var lines = [{ k: 'r.removedC', v: { u: c.username } }];
     lines.act = el('div', null, [el('button', { class: 'btn sm', type: 'button', onclick: function () {
       if (!undoCreator) return;
       state.creators.splice(Math.min(undoCreator.idx, state.creators.length), 0, undoCreator.c); undoCreator = null;
       persist(); renderAll(); showMsg(null);
-    } }, [ic('arrow-counter-clockwise'), el('span', { text: 'تراجع' })])]);
+    } }, [ic('arrow-counter-clockwise'), el('span', { text: T('c.undo') })])]);
     showMsg(lines);
   }
 
@@ -310,7 +300,7 @@
     var box = $('chips'); box.textContent = '';
     if (!state.creators.length) return;
     var anySel = Object.keys(selected).length > 0;
-    box.appendChild(el('button', { class: 'cchip all' + (anySel ? '' : ' cur'), type: 'button', onclick: function () { selected = {}; renderAll(); } }, [el('span', { text: 'الكل' })]));
+    box.appendChild(el('button', { class: 'cchip all' + (anySel ? '' : ' cur'), type: 'button', onclick: function () { selected = {}; renderAll(); } }, [el('span', { text: T('c.all') })]));
     state.creators.forEach(function (c) {
       var p = c.profile || {};
       var busy = job && job.current.toLowerCase() === c.username.toLowerCase();
@@ -318,19 +308,19 @@
       var av = p.pic ? el('img', { class: 'av', src: p.pic, alt: '', referrerpolicy: 'no-referrer' }) : el('span', { class: 'av' }, [ic('user-circle')]);
       if (p.pic) av.addEventListener('error', function () { var s = el('span', { class: 'av' }, [ic('user-circle')]); av.replaceWith(s); });
       var st;
-      if (busy) st = el('span', { class: 'wait', text: 'يجلب الآن…' });
-      else if (queued) st = el('span', { class: 'wait', text: 'في الانتظار' });
-      else if (!c.lastFetched) st = el('span', { class: 'st', text: c.error ? 'تعذّر الجلب' : 'لم يُجلب بعد' });
+      if (busy) st = el('span', { class: 'wait', text: T('r.fetchingNow') });
+      else if (queued) st = el('span', { class: 'wait', text: T('r.queued') });
+      else if (!c.lastFetched) st = el('span', { class: 'st', text: T(c.error ? 'r.fetchErr' : 'r.notFetched') });
       else st = el('span', { class: 'st' }, [
-        el('span', { class: 'num', text: fmtNum(p.followers) }), ' متابع · الوسيط ', el('span', { class: 'num', text: fmtNum(c.median) }),
-        ' · ', el('span', { class: 'num', text: String(c.reels.length) }), ' ريل · ', 'آخر تحديث ' + relTime(c.lastFetched / 1000)
+        el('span', { class: 'num', text: fmtNum(p.followers) }), T('r.followers'), el('span', { class: 'num', text: fmtNum(c.median) }),
+        ' · ', el('span', { class: 'num', text: String(c.reels.length) }), T('r.reelsDot'), T('r.updated', { t: relTime(c.lastFetched / 1000) })
       ]);
-      var title = [p.fullName, c.error ? 'خطأ: ' + c.error : '', c.note].filter(Boolean).join('\n');
+      var title = [p.fullName, c.error ? T('r.errPrefix') + c.error : '', c.note].filter(Boolean).join('\n');
       var chip = el('div', { class: 'cchip' + (selected[c.username] ? ' cur' : '') + (c.error ? ' err' : ''), title: title || null, role: 'button', tabindex: '0' }, [
         av,
         el('span', { class: 'tx' }, [el('span', { class: 'nm', text: '@' + c.username }), st]),
-        el('button', { class: 'mini', type: 'button', title: 'تحديث هذا الحساب', disabled: !!(busy || queued), onclick: function (e) { e.stopPropagation(); runFetch([c.username]); } }, [ic('arrow-clockwise')]),
-        el('button', { class: 'mini del', type: 'button', title: 'إزالة الحساب', disabled: !!busy, onclick: function (e) { e.stopPropagation(); removeCreator(c); } }, [ic('x')])
+        el('button', { class: 'mini', type: 'button', title: T('r.refreshOne'), disabled: !!(busy || queued), onclick: function (e) { e.stopPropagation(); runFetch([c.username]); } }, [ic('arrow-clockwise')]),
+        el('button', { class: 'mini del', type: 'button', title: T('r.removeAcc'), disabled: !!busy, onclick: function (e) { e.stopPropagation(); removeCreator(c); } }, [ic('x')])
       ]);
       function toggle() { if (selected[c.username]) delete selected[c.username]; else selected[c.username] = true; renderAll(); }
       chip.addEventListener('click', toggle);
@@ -365,35 +355,34 @@
     return state.creators.filter(function (c) { return !anySel || selected[c.username]; });
   }
 
-  var SORT_LABEL = { views: 'مشاهدة', likes: 'إعجاب', comments: 'تعليق', shares: 'مشاركة', reposts: 'إعادة نشر' };
   function renderFeed() {
     var f = feed(), list = f.list, grid = $('grid'), empty = $('empty');
     var cs = shownCreators();
     var total = cs.reduce(function (a, c) { return a + (c.reels || []).length; }, 0);
     // header sub + summary
     var all = state.creators.reduce(function (a, c) { return a + (c.reels || []).length; }, 0);
-    $('sub').textContent = state.creators.length ? (state.creators.length + ' ' + countWord(state.creators.length, 'حساب', 'حسابان', 'حسابات', 'حسابًا') + ' · ' + all + ' ريل محفوظ للتحليل') : 'أضف حسابات إنستغرام لترى أفضل ريلزها في قائمة واحدة.';
+    $('sub').textContent = state.creators.length ? T('r.subAll', { acc: ARP.count('r.accN', state.creators.length), n: all }) : T('r.subEmpty');
     var sm = $('summary'); sm.textContent = '';
     if (state.creators.length) {
-      sm.appendChild(el('span', null, [el('span', { class: 'num', text: String(cs.length) }), ' ' + countWord(cs.length, 'حساب', 'حسابان', 'حسابات', 'حسابًا')]));
+      sm.appendChild(el('span', null, [el('span', { class: 'num', text: String(cs.length) }), ' ' + ARP.plural('r.accN', cs.length)]));
       sm.appendChild(el('span', { class: 'sep', text: '|' }));
-      sm.appendChild(el('span', null, [el('span', { class: 'num', text: String(list.length) }), ' ريل معروض', list.length !== total ? ' من ' : '', list.length !== total ? el('span', { class: 'num', text: String(total) }) : null]));
+      sm.appendChild(el('span', null, [el('span', { class: 'num', text: String(list.length) }), T('r.shown'), list.length !== total ? T('r.of') : '', list.length !== total ? el('span', { class: 'num', text: String(total) }) : null]));
       if (list.length) {
         var t = list[0], k = state.settings.sort;
-        var val = k === 'outlier' ? fmtOutlier(t.outlier) + ' عن وسيطه' : k === 'shareOutlier' ? fmtOutlier(t.shareOutlier) + ' عن وسيط مشاركاته'
-          : k === 'shareRate' ? fmtPct(t.shareRate) + ' من المشاهدات' : k === 'takenAt' ? (relTime(t.takenAt) || '—') : fmtNum(t[k]) + ' ' + SORT_LABEL[k];
+        var val = k === 'outlier' ? fmtOutlier(t.outlier) + T('r.vsMedian') : k === 'shareOutlier' ? fmtOutlier(t.shareOutlier) + T('r.vsShareMedian')
+          : k === 'shareRate' ? fmtPct(t.shareRate) + T('r.ofViews') : k === 'takenAt' ? (relTime(t.takenAt) || '—') : fmtNum(t[k]) + ' ' + T('r.u.' + k);
         sm.appendChild(el('span', { class: 'sep', text: '|' }));
-        sm.appendChild(el('span', { class: 'top1' }, [ic('lightning'), 'الأعلى: ',
+        sm.appendChild(el('span', { class: 'top1' }, [ic('lightning'), T('r.top'),
           el('a', { href: t.url, target: '_blank', rel: 'noopener', dir: 'ltr', text: '@' + t.username }), ' — ', el('span', { class: 'num', text: val }),
-          k !== 'views' ? ' · ' : '', k !== 'views' ? el('span', { class: 'num', text: fmtNum(t.views) }) : null, k !== 'views' ? ' مشاهدة' : '']));
+          k !== 'views' ? ' · ' : '', k !== 'views' ? el('span', { class: 'num', text: fmtNum(t.views) }) : null, k !== 'views' ? ' ' + T('r.u.views') : '']));
       }
     }
     var notes = [];
-    if (f.noDate) notes.push(f.noDate + ' ريل بلا تاريخ نشر لا تظهر مع فلتر الفترة (سجّل الدخول في إنستغرام لجلب التواريخ).');
+    if (f.noDate) notes.push(T('r.noDate', { n: f.noDate }));
     var anyNoDate = cs.some(function (c) { return (c.reels || []).some(function (r) { return !r.takenAt; }); });
-    if (state.settings.sort === 'takenAt' && anyNoDate) notes.push('بعض الريلز بلا تاريخ، فتظهر في آخر الترتيب.');
+    if (state.settings.sort === 'takenAt' && anyNoDate) notes.push(T('r.noDateSort'));
     if (/^(shares|reposts|shareRate|shareOutlier)$/.test(state.settings.sort) && cs.some(function (c) { return (c.reels || []).some(function (r) { return r.shares == null; }); }))
-      notes.push('الريلز التي لم يرسل إنستغرام عدد مشاركاتها تظهر في آخر الترتيب (حدّث الحساب لجلبه).');
+      notes.push(T('r.noShares'));
     $('fnote').textContent = notes.join(' ');
 
     grid.textContent = ''; saveBtns = {};
@@ -401,8 +390,7 @@
       empty.hidden = false; empty.textContent = '';
       var none = !state.creators.length, unfetched = !none && !all;
       empty.appendChild(ic(none ? 'user-circle' : 'funnel'));
-      empty.appendChild(el('div', { text: none ? 'لا توجد حسابات بعد. اكتب أسماء المستخدمين في الأعلى ثم اضغط «إضافة وجلب».'
-        : unfetched ? 'لم تُجلب ريلز بعد. اضغط «تحديث الكل».' : 'لا توجد ريلز تطابق هذه الفلاتر.' }));
+      empty.appendChild(el('div', { text: T(none ? 'r.emptyNone' : unfetched ? 'r.emptyUnfetched' : 'r.emptyFilter') }));
       return;
     }
     empty.hidden = true;
@@ -415,8 +403,8 @@
     b.className = 'btn sm grow' + (on ? ' on' : '');
     b.textContent = '';
     b.appendChild(ic(on ? 'bookmark-simple-fill' : 'bookmark-simple'));
-    b.appendChild(el('span', { text: on ? 'محفوظ' : 'حفظ' }));
-    b.title = on ? 'إزالة من المكتبة' : 'حفظ في المكتبة';
+    b.appendChild(el('span', { text: T(on ? 'r.saved' : 'c.save') }));
+    b.title = T(on ? 'c.removeLib' : 'r.saveLib');
   }
   function toggleSave(r) {
     var k = keyOf(r);
@@ -432,9 +420,9 @@
   function card(r, rank) {
     var hot = (r.outlier || 0) >= 3;
     var img = el('img', { src: r.thumb || '', alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' });
-    var thumb = el('a', { class: 'thumb', href: r.url, target: '_blank', rel: 'noopener', title: 'فتح الريل في إنستغرام' }, [
+    var thumb = el('a', { class: 'thumb', href: r.url, target: '_blank', rel: 'noopener', title: T('r.openReelIg') }, [
       img,
-      el('span', { class: 'badge num' + (hot ? ' hot' : ''), title: 'نقاط التميّز: المشاهدات ÷ وسيط الحساب', text: fmtOutlier(r.outlier) }),
+      el('span', { class: 'badge num' + (hot ? ' hot' : ''), title: T('r.outlierTip'), text: fmtOutlier(r.outlier) }),
       el('span', { class: 'rank num', text: '#' + rank })
     ]);
     img.addEventListener('error', function () { img.remove(); thumb.insertBefore(el('div', { class: 'ph' }, [ic('instagram-logo')]), thumb.firstChild); });
@@ -447,16 +435,16 @@
         el('div', { class: 'user' }, [ic('instagram-logo'), el('span', { dir: 'ltr', text: '@' + (r.username || '') })]),
         el('div', { class: 'cap', dir: 'auto', text: r.caption || '' }),
         el('div', { class: 'stats' }, [
-          el('span', { title: 'المشاهدات' }, [ic('eye'), el('span', { class: 'num', text: fmtNum(r.views) })]),
-          el('span', { title: 'الإعجابات' }, [ic('heart'), el('span', { class: 'num', text: fmtNum(r.likes) })]),
-          el('span', { title: 'التعليقات' }, [ic('chat-circle'), el('span', { class: 'num', text: fmtNum(r.comments) })]),
-          el('span', { title: 'المشاركات' + (r.shareRate != null ? ' (' + fmtPct(r.shareRate) + ' من المشاهدات)' : '') }, [ic('paper-plane-tilt'), el('span', { class: 'num', text: fmtNum(r.shares) })])
+          el('span', { title: T('c.views') }, [ic('eye'), el('span', { class: 'num', text: fmtNum(r.views) })]),
+          el('span', { title: T('c.likes') }, [ic('heart'), el('span', { class: 'num', text: fmtNum(r.likes) })]),
+          el('span', { title: T('c.comments') }, [ic('chat-circle'), el('span', { class: 'num', text: fmtNum(r.comments) })]),
+          el('span', { title: r.shareRate != null ? T('r.sharesTip', { p: fmtPct(r.shareRate) }) : T('c.shares') }, [ic('paper-plane-tilt'), el('span', { class: 'num', text: fmtNum(r.shares) })])
         ]),
-        el('div', { class: 'date', text: r.takenAt ? 'نُشر ' + relTime(r.takenAt) : 'تاريخ النشر غير معروف' })
+        el('div', { class: 'date', text: r.takenAt ? T('r.posted', { t: relTime(r.takenAt) }) : T('r.noDateCard') })
       ]),
       el('div', { class: 'acts' }, [
         sb,
-        el('a', { class: 'btn sm icon', href: r.url, target: '_blank', rel: 'noopener', title: 'فتح في إنستغرام' }, [ic('arrow-up-right')])
+        el('a', { class: 'btn sm icon', href: r.url, target: '_blank', rel: 'noopener', title: T('c.openIg') }, [ic('arrow-up-right')])
       ])
     ]);
   }
@@ -489,7 +477,7 @@
   $('addBtn').addEventListener('click', addFromInput);
   $('addIn').addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addFromInput(); } });
   $('refreshAll').addEventListener('click', function () { runFetch(state.creators.map(function (c) { return c.username; })); });
-  $('stopBtn').addEventListener('click', function () { if (job) { job.stop = true; $('progT').textContent = 'يتوقّف بعد الحساب الحالي…'; } });
+  $('stopBtn').addEventListener('click', function () { if (job) { job.stop = true; progKey = 'r.stopping'; paintProgress(); } });
   ['sort', 'minOutlier', 'period'].forEach(function (id) {
     $(id).addEventListener('change', function () {
       var v = $(id).value; state.settings[id] = id === 'minOutlier' ? Number(v) : v;
@@ -504,13 +492,19 @@
     var n = Math.min(500, Math.max(1, Math.round(Number($('limitN').value) || 0)));
     if (!n) return;
     $('limitN').value = String(n); state.settings.limit = n; persist();
-    showMsg([{ t: 'الحد الجديد (' + n + ' ريل لكل حساب) يُطبَّق في الجلب القادم. اضغط «تحديث الكل» لتطبيقه الآن.' }]);
+    showMsg([{ k: 'r.limitMsg', v: { n: n } }]);
   });
   $('limit').addEventListener('change', function () {
     if ($('limit').value === 'custom') { $('limitBox').hidden = false; $('limitN').focus(); return; }
     $('limitBox').hidden = true;
     state.settings.limit = Number($('limit').value); persist();
-    showMsg([{ t: 'الحد الجديد (' + state.settings.limit + ' ريل لكل حساب) يُطبَّق في الجلب القادم. اضغط «تحديث الكل» لتطبيقه الآن.' }]);
+    showMsg([{ k: 'r.limitMsg', v: { n: state.settings.limit } }]);
   });
-  load();
+  // language: static strings via data-i18n, everything drawn by JS redrawn in place (no reload)
+  var started = false;
+  ARP.wire(function () {
+    if (!started) { started = true; load(); return; }
+    renderAll(); paintProgress();
+    if (lastMsg) showMsg(lastMsg.lines, lastMsg.bad);
+  });
 })();

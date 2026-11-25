@@ -8,6 +8,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="icon.png">
+<script>
+(function(d){var l,q=(location.search.match(/[?&]lang=(ar|en)\b/)||[])[1];
+  try{l=q||localStorage.getItem('ra-lang');if(q)localStorage.setItem('ra-lang',q);}catch(e){l=q;}
+  if(l!=='ar'&&l!=='en')l=/^ar/i.test((navigator.languages&&navigator.languages[0])||navigator.language||'')?'ar':'en';
+  d.lang=l;d.dir=l==='ar'?'rtl':'ltr';
+  if(l==='en')document.title='Reels Analysis — Privacy policy and terms of use';
+})(document.documentElement);
+</script>
 <style>
 :root{--fg:#1A1C1F;--mut:#6E6E6E;--muted:#F4F4F4;--line:#E6E6E6;--blue:#0F6BFF}
 *{box-sizing:border-box}
@@ -15,9 +23,10 @@ body{margin:0;background:#fff;color:var(--fg);font:400 15px/26px "IBM Plex Sans 
 a{color:inherit;text-decoration:none}
 header{position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line);background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .hc{max-width:1080px;margin:0 auto;padding:0 32px;height:64px;display:flex;align-items:center;gap:24px}
-.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;direction:ltr}
+.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600}
 .brand img{width:28px;height:28px;border-radius:8px}
-.back{margin-inline-start:auto;height:32px;padding:0 14px;border:1px solid var(--line);border-radius:999px;font-size:14px;line-height:30px}
+.end{margin-inline-start:auto;display:flex;align-items:center;gap:12px}
+.back{height:32px;padding:0 14px;border:1px solid var(--line);border-radius:999px;font-size:14px;line-height:30px}
 .back:hover{background:var(--muted)}
 main{max-width:760px;margin:0 auto;padding:96px 20px}
 .eyebrow{margin:0;font-size:12px;line-height:16px;font-weight:500;color:var(--mut);text-align:center}
@@ -29,21 +38,25 @@ h2{font-size:15px;line-height:24px;font-weight:500;margin:0 0 12px}
 ul+h2{margin-top:32px}
 ul{margin:0;padding-inline-start:20px;color:#3A3D42;font-size:14px}
 li+li{margin-top:8px}
-.en{direction:ltr;text-align:left}
+html[lang=ar] [data-only=en],html[lang=en] [data-only=ar]{display:none}
+.lsw{display:inline-flex;gap:2px;padding:2px;height:32px;border-radius:999px;background:var(--muted)}
+.lsw button{height:28px;padding:0 10px;border:0;border-radius:999px;background:transparent;font:500 13px/28px "IBM Plex Sans Arabic",-apple-system,"Segoe UI",sans-serif;color:var(--mut);cursor:pointer;white-space:nowrap}
+.lsw button:hover{color:#1A1C1F}
+.lsw button.on{background:#fff;color:var(--fg);box-shadow:0 1px 2px rgba(20,24,27,.08);cursor:default}
 footer{border-top:1px solid var(--line)}
 .fc{max-width:1080px;margin:0 auto;padding:48px 32px;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:14px;line-height:20px;color:var(--mut)}
 .fc nav{display:flex;gap:24px}.fc a:hover{color:var(--fg)}
-@media (max-width:640px){.hc,.fc{padding-inline:20px}main{padding:56px 20px}.card{padding:24px 20px}}
+@media (max-width:640px){.hc,.fc{padding-inline:20px}.hc{gap:12px}.brand{white-space:nowrap}.end{gap:8px}.lsw{padding:0;background:transparent}.lsw button.on{display:none}.lsw button{height:32px;line-height:30px;padding:0 10px;border:1px solid var(--line);color:var(--fg)}main{padding:56px 20px}.card{padding:24px 20px}}
 </style>
 </head>
 <body>
-<header><div class="hc"><a class="brand" href="index.html"><img src="icon.png" alt="">تحليل الريلز</a><a class="back" href="index.html">الصفحة الرئيسية</a></div></header>
+<header><div class="hc"><a class="brand" href="index.html"><img src="icon.png" alt=""><span data-only="ar">تحليل الريلز</span><span data-only="en">Reels Analysis</span></a><div class="end"><div class="lsw" role="group" aria-label="Language / اللغة"><button type="button" data-lang="ar" lang="ar">العربية</button><button type="button" data-lang="en" lang="en">English</button></div><a class="back" href="index.html"><span data-only="ar">الصفحة الرئيسية</span><span data-only="en">Home</span></a></div></div></header>
 <main>
-<p class="eyebrow">تحليل الريلز</p>
-<h1>الخصوصية وشروط الاستخدام</h1>
-<div class="muted">آخر تحديث: 25 نوفمبر 2026</div>
+<p class="eyebrow"><span data-only="ar">تحليل الريلز</span><span data-only="en">Reels Analysis</span></p>
+<h1><span data-only="ar">الخصوصية وشروط الاستخدام</span><span data-only="en">Privacy and terms of use</span></h1>
+<div class="muted"><span data-only="ar">آخر تحديث: 25 نوفمبر 2026</span><span data-only="en">Last updated: 25 November 2026</span></div>
 
-<div class="card">
+<div class="card" data-only="ar" lang="ar">
 <h2>سياسة الخصوصية</h2>
 <ul>
 <li>تعمل الإضافة داخل متصفحك فقط، على صفحات إنستغرام.</li>
@@ -65,7 +78,7 @@ footer{border-top:1px solid var(--line)}
 </ul>
 </div>
 
-<div class="card en">
+<div class="card" data-only="en" lang="en">
 <h2>Privacy policy</h2>
 <ul>
 <li>The extension runs only inside your browser, on Instagram pages.</li>
@@ -74,7 +87,7 @@ footer{border-top:1px solid var(--line)}
 <li>The extension has no server. It does not send your data anywhere, does not sell it, and uses no trackers or ads.</li>
 <li>When the browser starts and then every 12 hours, the extension asks GitHub (api.github.com) for the number of its latest version only, to tell you when a newer one exists. Nothing about you or your account is sent in this request.</li>
 <li>It never reads your password or messages, and never posts, likes or follows on your behalf.</li>
-<li>A video is downloaded only when you click «تنزيل» (Download), into your own Downloads folder.</li>
+<li>A video is downloaded only when you click Download, into your own Downloads folder.</li>
 <li>To delete all extension data: remove the extension from your browser, or clear the library from its page.</li>
 </ul>
 
@@ -88,6 +101,23 @@ footer{border-top:1px solid var(--line)}
 </div>
 
 </main>
-<footer><div class="fc"><span>غير تابعة لإنستغرام ولا لشركة Meta.</span><nav><a href="https://github.com/aminellkadaoui/amine-reels">GitHub</a><a href="https://github.com/aminellkadaoui/amine-reels/issues">أبلغ عن مشكلة</a></nav></div></footer>
+<footer><div class="fc"><span><span data-only="ar">غير تابعة لإنستغرام ولا لشركة Meta.</span><span data-only="en">Not affiliated with Instagram or Meta.</span></span><nav><a href="https://github.com/aminellkadaoui/amine-reels">GitHub</a><a href="https://github.com/aminellkadaoui/amine-reels/issues"><span data-only="ar">أبلغ عن مشكلة</span><span data-only="en">Report an issue</span></a></nav></div></footer>
+<script>
+(function(){
+  var d=document.documentElement,T={ar:'تحليل الريلز — سياسة الخصوصية وشروط الاستخدام',en:'Reels Analysis — Privacy policy and terms of use'};
+  function apply(l){
+    d.lang=l;d.dir=l==='ar'?'rtl':'ltr';document.title=T[l];
+    var b=document.querySelectorAll('.lsw button');
+    for(var i=0;i<b.length;i++){var on=b[i].getAttribute('data-lang')===l;b[i].className=on?'on':'';b[i].setAttribute('aria-pressed',on);}
+  }
+  document.querySelector('.lsw').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;var l=b.getAttribute('data-lang');
+    try{localStorage.setItem('ra-lang',l);}catch(x){}
+    if(/[?&]lang=/.test(location.search)&&history.replaceState){var u=new URL(location.href);u.searchParams.set('lang',l);history.replaceState(null,'',u);}
+    apply(l);
+  });
+  apply(d.lang==='en'?'en':'ar');
+})();
+</script>
 </body>
 </html>

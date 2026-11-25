@@ -52,9 +52,43 @@
     try { claim = sessionStorage.getItem('www-claim-v2') || '0'; } catch (e) { }
     return Object.assign({ 'X-IG-App-ID': APP_ID, 'X-CSRFToken': csrf(), 'X-Requested-With': 'XMLHttpRequest', 'X-ASBD-ID': '359341', 'X-IG-WWW-Claim': claim, 'Accept': '*/*' }, extra || {});
   }
-  function err(msg) { return new Error(msg); }
-  const E_LOGIN = 'إنستغرام لم يُرجع البيانات. تأكّد أنك مسجّل الدخول في إنستغرام بهذا المتصفح ثم أعد المحاولة.';
-  const E_RATE = 'إنستغرام أوقف الطلبات مؤقتًا (كثرة طلبات). انتظر بضع دقائق ثم أعد المحاولة.';
+  /* user-facing messages in the user's language. MAIN world can't load lib/i18n.js, so read the language
+     that i18n.js writes on <html data-ar-lang> ('ar' | 'en', default 'ar') at the moment a message is built. */
+  const MSG = {
+    ar: {
+      login: 'إنستغرام لم يُرجع البيانات. تأكّد أنك مسجّل الدخول في إنستغرام بهذا المتصفح ثم أعد المحاولة.',
+      rate: 'إنستغرام أوقف الطلبات مؤقتًا (كثرة طلبات). انتظر بضع دقائق ثم أعد المحاولة.',
+      net: 'تعذّر الاتصال بإنستغرام. تحقّق من الإنترنت ثم أعد المحاولة.',
+      html: 'إنستغرام أعاد صفحة بدل البيانات ({s}).', parse: 'ردّ غير مفهوم من إنستغرام ({s}).', status: 'خطأ من إنستغرام ({s}).',
+      badUrl: 'رابط الريل غير صحيح.', noReel: 'لم أجد بيانات هذا الريل.', noProfile: 'لم أجد الحساب @{u}.',
+      rejected: 'إنستغرام رفض الطلب.', noReelsReply: 'لم أجد الريلز في الرد.', openProfile: 'افتح صفحة حساب أولًا.',
+      noReels: 'لم أجد ريلز لهذا الحساب.', partial: 'نتيجة جزئية: عرضتُ الريلز التي حمّلتها الصفحة فقط ({n}).',
+      reason: ' السبب: {m}', loginMore: ' سجّل الدخول في إنستغرام لجلب المزيد مع التواريخ.', noDates: 'لم أستطع جلب التواريخ: {m}',
+      openReel: 'افتح ريلًا أولًا.', noTx: 'هذا الريل ليس فيه ترجمة أو نص مرفق من إنستغرام، فلا أستطيع تفريغه بدون خدمة تفريغ صوتي.',
+      stStart: 'يبدأ', stCollect: 'يجمع الريلز', stFill: 'يكمل التواريخ والمشاهدات ({d} من {n})'
+    },
+    en: {
+      login: 'Instagram returned no data. Make sure you are logged in to Instagram in this browser, then try again.',
+      rate: 'Instagram paused requests for now (too many requests). Wait a few minutes, then try again.',
+      net: 'Couldn’t reach Instagram. Check your internet connection, then try again.',
+      html: 'Instagram returned a page instead of data ({s}).', parse: 'Unreadable reply from Instagram ({s}).', status: 'Instagram error ({s}).',
+      badUrl: 'Invalid reel link.', noReel: 'Couldn’t find this reel’s data.', noProfile: 'Couldn’t find the account @{u}.',
+      rejected: 'Instagram rejected the request.', noReelsReply: 'No reels found in the reply.', openProfile: 'Open a profile page first.',
+      noReels: 'No reels found for this account.', partial: 'Partial result: showing only the reels the page loaded ({n}).',
+      reason: ' Reason: {m}', loginMore: ' Log in to Instagram to get more, with dates.', noDates: 'Couldn’t get the dates: {m}',
+      openReel: 'Open a reel first.', noTx: 'This reel has no captions or text from Instagram, so it can’t be transcribed without a speech-to-text service.',
+      stStart: 'Starting', stCollect: 'Collecting reels', stFill: 'Filling in dates and views ({d} of {n})'
+    }
+  };
+  function uiLang() { try { return document.documentElement.getAttribute('data-ar-lang') === 'en' ? 'en' : 'ar'; } catch (e) { return 'ar'; } }
+  function tr(key, vars) {
+    let s = MSG[uiLang()][key]; if (s == null) s = MSG.ar[key]; if (s == null) return key;
+    return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m)) : s;
+  }
+  // err('rate') → Error in the user's language with .code = 'rate' (compare codes, never message text)
+  function err(key, vars) { const e = new Error(tr(key, vars)); e.code = key; return e; }
+  const E_RATE = 'rate';
+  const isRate = (e) => !!(e && e.code === E_RATE);
 
   const diag = [];   // what each request returned, shown to the user when results are partial
   function logReq(path, what) { diag.push(path.replace(/\?.*$/, '').replace(/\/\d{6,}\//, '/{id}/') + ' → ' + what); if (diag.length > 12) diag.shift(); }
@@ -66,16 +100,16 @@
     let res;
     try {
       res = await _fetch(url, Object.assign({ credentials: 'include', headers: headers() }, opts || {}));
-    } catch (e) { throw err('تعذّر الاتصال بإنستغرام. تحقّق من الإنترنت ثم أعد المحاولة.'); }
+    } catch (e) { throw err('net'); }
     logReq(url, String(res.status));
     if (res.status === 429) throw err(E_RATE);
     const text = await res.text();
-    if (/^\s*</.test(text)) throw err(res.status === 404 ? E_LOGIN : 'إنستغرام أعاد صفحة بدل البيانات (' + res.status + ').');
+    if (/^\s*</.test(text)) throw res.status === 404 ? err('login') : err('html', { s: res.status });
     let j;
-    try { j = JSON.parse(text.replace(/^for \(;;\);/, '')); } catch (e) { throw err('ردّ غير مفهوم من إنستغرام (' + res.status + ').'); }
+    try { j = JSON.parse(text.replace(/^for \(;;\);/, '')); } catch (e) { throw err('parse', { s: res.status }); }
     if (j && (j.message === 'Please wait a few minutes before you try again.' || j.spam)) throw err(E_RATE);
-    if (j && (j.require_login || j.message === 'login_required' || res.status === 401 || res.status === 403)) throw err(E_LOGIN);
-    if (!res.ok) throw err('خطأ من إنستغرام (' + res.status + ').');
+    if (j && (j.require_login || j.message === 'login_required' || res.status === 401 || res.status === 403)) throw err('login');
+    if (!res.ok) throw err('status', { s: res.status });
     ingest(j);
     return j;
   }
@@ -362,7 +396,7 @@
 
   async function getReel(codeOrUrl) {
     const code = parseCode(codeOrUrl);
-    if (!code) throw err('رابط الريل غير صحيح.');
+    if (!code) throw err('badUrl');
     let r = media.get(code);
     // a video with no real view count yet → ask media/info once (it carries play_count when logged in)
     const needViews = r && r._isVideo !== false && !(r.views > 0) && !r._infoTried;
@@ -379,7 +413,7 @@
       try { await fetchReelHtml(code); } catch (e) { lastErr = lastErr || e; }
       r = media.get(code);
     }
-    if (!r) throw lastErr || err('لم أجد بيانات هذا الريل.');
+    if (!r) throw lastErr || err('noReel');
     return publicReel(r);
   }
 
@@ -431,7 +465,7 @@
       if (!users.get(key)) throw e;
     }
     p = users.get(key);
-    if (!p) throw err('لم أجد الحساب @' + username + '.');
+    if (!p) throw err('noProfile', { u: username });
     return p;
   }
 
@@ -465,11 +499,11 @@
     logReq("graphql(reels)", String(res.status));
     if (res.status === 429) throw err(E_RATE);
     const text = (await res.text()).replace(/^for \(;;\);/, '');
-    let j; try { j = JSON.parse(text.split('\n')[0]); } catch (e) { throw err('ردّ غير مفهوم من إنستغرام (' + res.status + ').'); }
-    if (j.errors && !j.data) throw err('إنستغرام رفض الطلب.');
+    let j; try { j = JSON.parse(text.split('\n')[0]); } catch (e) { throw err('parse', { s: res.status }); }
+    if (j.errors && !j.data) throw err('rejected');
     ingest(j);
     const c = findConn(j.data || j, 0);
-    if (!c) throw err('لم أجد الريلز في الرد.');
+    if (!c) throw err('noReelsReply');
     const codes = [];
     for (const e of c.edges) { const m = e && e.node && (e.node.media || e.node); if (m && (m.code || m.shortcode)) codes.push(m.code || m.shortcode); }
     return { codes, cursor: c.page_info.end_cursor, more: !!c.page_info.has_next_page };
@@ -508,21 +542,21 @@
       evs.forEach((t) => window.removeEventListener(t, stopIt, { capture: true }));
       if (!userActed && location.pathname === path0) window.scrollTo(0, y0);
     }
-    logReq("scroll", last + " ريل");
+    logReq("scroll", last + " reels");
     return last > 12;
   }
 
   async function getProfileReels(username, opts) {
     username = String(username || pageInfo().username || '').replace(/^@/, '');
-    if (!username) throw err('افتح صفحة حساب أولًا.');
+    if (!username) throw err('openProfile');
     const limit = Math.max(1, Math.min(500, (opts && opts.limit) || 60));
     const prof = await getProfile(username);
     const uid = prof.id;
     const codes = [];
     let lastProg = 0;
     const prog = (step) => { const now = Date.now(); if (now - lastProg < 400) return; lastProg = now; window.postMessage({ __ar: 'evt', event: 'progress', data: { username, count: codes.length, limit, step } }, '*'); };
-    const add = (code) => { if (code && !codes.includes(code)) { codes.push(code); prog('يجمع الريلز'); } };
-    prog('يبدأ');
+    const add = (code) => { if (code && !codes.includes(code)) { codes.push(code); prog(tr('stCollect')); } };
+    prog(tr('stStart'));
     let note;
 
     let fetched = false, lastErr = null;
@@ -536,7 +570,7 @@
           cur = pg.cursor; more = pg.more && !!cur; page++; fetched = true;
           if (more && codes.length < limit) await sleep(200 + Math.random() * 100);
         }
-      } catch (e) { if (e.message === E_RATE) lastErr = e; else window.__arTplBroken = true; }
+      } catch (e) { if (isRate(e)) lastErr = e; else window.__arTplBroken = true; }
     }
     if (uid && !fetched && !window.__arRestBroken) {
       // 1) the reels tab's own read: POST /api/v1/clips/user/
@@ -555,7 +589,7 @@
         }
       } catch (e) { lastErr = e; }
       // 2) fallback: user feed (videos only)
-      if (!fetched && !(lastErr && lastErr.message === E_RATE)) {
+      if (!fetched && !isRate(lastErr)) {
         try {
           let maxId2 = '', more2 = true, page2 = 0;
           while (more2 && codes.length < limit && page2 < 40) {
@@ -568,9 +602,9 @@
         } catch (e) { lastErr = lastErr || e; }
       }
     }
-    if (uid && !fetched && lastErr && lastErr.message !== E_RATE) window.__arRestBroken = true;
+    if (uid && !fetched && lastErr && !isRate(lastErr)) window.__arRestBroken = true;
     // 3) Instagram's own reels request (learned from the page), paged with the cursor
-    if (uid && codes.length < limit && !(lastErr && lastErr.message === E_RATE) && reelsTpl) {
+    if (uid && codes.length < limit && !isRate(lastErr) && reelsTpl) {
       try {
         let cur = null, more = true, page = 0;
         while (more && codes.length < limit && page < 40) {
@@ -604,12 +638,12 @@
         if (((r.username && r.username.toLowerCase() === username.toLowerCase()) || (uid && r._userId === uid)) && r._isVideo !== false) add(r.code);
       }
     }
-    if (!codes.length) throw lastErr || err('لم أجد ريلز لهذا الحساب.');
-    if (!fetched) note = 'نتيجة جزئية: عرضتُ الريلز التي حمّلتها الصفحة فقط (' + codes.length + ').' + (lastErr ? ' السبب: ' + lastErr.message : ' سجّل الدخول في إنستغرام لجلب المزيد مع التواريخ.') ;
+    if (!codes.length) throw lastErr || err('noReels');
+    if (!fetched) note = tr('partial', { n: codes.length }) + (lastErr ? tr('reason', { m: lastErr.message }) : tr('loginMore'));
     if (!fetched && diag.length) try { console.debug('[Reels Analysis] requests:', diag.slice(-6).join(' · ')); } catch (e) { } // technical details stay out of the Arabic UI
 
     // fill missing dates / views one by one from media/info (the request the reel page itself makes)
-    if (!(lastErr && lastErr.message === E_RATE)) {
+    if (!isRate(lastErr)) {
       const todo = codes.slice(0, limit).map((c) => media.get(c)).filter((r) => r && !(r.takenAt && r.views > 0) && !r._infoTried).slice(0, 30);
       let stop = false, done = 0;
       const one = async (r) => {
@@ -618,8 +652,8 @@
         try {
           const j = await igJSON('/api/v1/media/' + (r.id || codeToPk(r.code)) + '/info/');
           if (j && j.items && j.items[0]) ingest(j.items[0]);
-        } catch (e) { stop = true; if (!note) note = 'لم أستطع جلب التواريخ: ' + e.message; }
-        done++; prog('يكمل التواريخ والمشاهدات (' + done + ' من ' + todo.length + ')');
+        } catch (e) { stop = true; if (!note) note = tr('noDates', { m: e.message }); }
+        done++; prog(tr('stFill', { d: done, n: todo.length }));
       };
       for (let i = 0; i < todo.length && !stop; i += 4) { await Promise.all(todo.slice(i, i + 4).map(one)); if (!stop) await sleep(150); }
     }
@@ -655,7 +689,7 @@
   }
   async function getTranscript(codeOrUrl) {
     const code = parseCode(codeOrUrl) || pageInfo().code;
-    if (!code) return { ok: false, reason: 'افتح ريلًا أولًا.' };
+    if (!code) return { ok: false, reason: tr('openReel') };
     if (!subtitleUrls.has(code)) { try { await getReel(code); } catch (e) { /* keep going */ } }
     const urls = subtitleUrls.get(code) || [];
     for (const u of urls) {
@@ -669,7 +703,7 @@
         }
       } catch (e) { /* try next */ }
     }
-    return { ok: false, reason: 'هذا الريل ليس فيه ترجمة أو نص مرفق من إنستغرام، فلا أستطيع تفريغه بدون خدمة تفريغ صوتي.' };
+    return { ok: false, reason: tr('noTx') };
   }
 
   /* ---------------- RPC ---------------- */

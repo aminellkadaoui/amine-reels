@@ -14,6 +14,18 @@
   var LIB_KEY = 'ar_library';
   var FONT = 'AR Thmanyah Sans';
 
+  // translations (lib/i18n.js + lib/i18n-app.js): every visible string goes through T()
+  var I = window.ARI18N || { t: function (k, v) { return String(k).replace(/\{(\w+)\}/g, function (m, x) { return v && v[x] != null ? v[x] : m; }); },
+    lang: function () { return 'ar'; }, dir: function () { return 'rtl'; }, pref: function () { return 'auto'; }, set: function () {}, ready: Promise.resolve('ar'), onChange: function () {} };
+  function T(k, v) { return I.t(k, v); }
+  function rtl() { return I.dir() === 'rtl'; }
+  // a template with node placeholders: tn('app.followers', {n: numEl}) → ['', numEl, ' followers']
+  function tn(key, nodes) {
+    var raw = I.t(key), out = [], re = /\{(\w+)\}/g, m, at = 0;
+    while ((m = re.exec(raw))) { if (m.index > at) out.push(raw.slice(at, m.index)); out.push(nodes && nodes[m[1]] != null ? nodes[m[1]] : m[0]); at = re.lastIndex; }
+    if (at < raw.length) out.push(raw.slice(at));
+    return out;
+  }
   function ic(name) { return PH[name] || ''; }
   function el(tag, attrs, kids) {
     var n = document.createElement(tag);
@@ -40,7 +52,7 @@
 
   function fmtNum(n) {
     if (n == null || isNaN(n)) return '—';
-    if (n < 0) return 'مخفية';
+    if (n < 0) return T('app.hidden');
     var a = Math.abs(n);
     function f(x) { var s = x.toFixed(1); return s.slice(-2) === '.0' ? s.slice(0, -2) : s; }
     if (a >= 1e9) return f(n / 1e9) + 'B';
@@ -70,44 +82,36 @@
     var d = new Date(ts * 1000);
     return d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0');
   }
-  // Arabic relative time with correct number agreement: 1 / 2 (dual) / 3–10 (plural) / 11+ (singular accusative).
-  var UNITS = [
-    // [seconds, one, two, few (3-10), many (11+)]
-    [31536000, 'سنة', 'سنتين', 'سنوات', 'سنة'],
-    [2592000, 'شهر', 'شهرين', 'أشهر', 'شهرًا'],
-    [604800, 'أسبوع', 'أسبوعين', 'أسابيع', 'أسبوعًا'],
-    [86400, 'يوم', 'يومين', 'أيام', 'يومًا'],
-    [3600, 'ساعة', 'ساعتين', 'ساعات', 'ساعة'],
-    [60, 'دقيقة', 'دقيقتين', 'دقائق', 'دقيقة']
-  ];
+  // Relative time. Forms (lib/i18n-app.js rel.<unit>.<form>): 1 / 2 (Arabic dual) / few = 3–10 (plural) / many = 11+ (singular accusative).
+  var UNITS = [[31536000, 'year'], [2592000, 'month'], [604800, 'week'], [86400, 'day'], [3600, 'hour'], [60, 'minute']];
   function relTime(ts) {
     if (!ts) return '—';
     var diff = Math.max(0, Date.now() / 1000 - ts);
-    if (diff < 60) return 'الآن';
+    if (diff < 60) return T('rel.now');
     for (var i = 0; i < UNITS.length; i++) {
       var u = UNITS[i];
       if (diff >= u[0]) {
         var n = Math.floor(diff / u[0]);
-        if (n === 1) return 'قبل ' + u[1];
-        if (n === 2) return 'قبل ' + u[2];
-        if (n <= 10) return 'قبل ' + n + ' ' + u[3];
-        return 'قبل ' + n + ' ' + u[4];
+        var form = n === 1 ? '1' : n === 2 ? '2' : n <= 10 ? 'few' : 'many';
+        return T('rel.ago', { x: T('rel.' + u[1] + '.' + form, { n: n }) });
       }
     }
-    return 'الآن';
+    return T('rel.now');
   }
-  function platformName(p) { return p === 'youtube' ? 'يوتيوب' : 'إنستغرام'; }
+  function platformName(p) { return T(p === 'youtube' ? 'app.youtube' : 'app.instagram'); }
   function errText(e) {
     var m = String((e && e.message) || e || '');
     var l = m.toLowerCase();
-    if (/[؀-ۿ]/.test(m)) return m; // already Arabic
-    if (/429|rate|too many|wait|throttl|limit/.test(l)) return platformName(state.platform) + ' رفض الطلب، جرّب بعد دقيقة.';
-    if (/401|403|login|logged|auth|checkpoint/.test(l)) return 'سجّل الدخول إلى ' + platformName(state.platform) + ' أولًا، ثم أعد المحاولة.';
-    if (/404|not found|no such|doesn.t exist/.test(l)) return 'لم أجد هذا الحساب أو الريل.';
-    if (/network|failed to fetch|timeout|timed out/.test(l)) return 'تعذّر الاتصال. تحقّق من الإنترنت ثم أعد المحاولة.';
-    if (/context invalidated|extension/.test(l)) return 'حُدّثت الإضافة. أعد تحميل الصفحة.';
-    if (/ardata|bridge/.test(l)) return 'طبقة البيانات لم تجهز بعد. أعد تحميل الصفحة.';
-    return 'حدث خطأ: ' + m;
+    // the data layer (ig.js) already writes its messages in the user's language: never translate them again
+    if (/[\u0600-\u06FF]/.test(m)) return m;                                   // an Arabic sentence
+    if (I.lang() === 'en' && /^[A-Z].*\s.*\s.*[.!)]$/.test(m) && !/^(HTTP|TypeError|Error|NetworkError|Failed)/.test(m)) return m; // an English sentence
+    if (/429|rate|too many|wait|throttl|limit/.test(l)) return T('app.err.rate', { p: platformName(state.platform) });
+    if (/401|403|login|logged|auth|checkpoint/.test(l)) return T('app.err.login', { p: platformName(state.platform) });
+    if (/404|not found|no such|doesn.t exist/.test(l)) return T('app.err.notFound');
+    if (/network|failed to fetch|timeout|timed out/.test(l)) return T('app.err.network');
+    if (/context invalidated|extension/.test(l)) return T('app.err.updated');
+    if (/ardata|bridge/.test(l)) return T('app.err.bridge');
+    return T('app.err.generic', { m: m });
   }
   function dataCall() {
     var args = arguments;
@@ -192,7 +196,15 @@
     if (typeof entryRoot !== 'undefined' && entryRoot) { entryRoot.classList.toggle('dark', d); entryRoot.classList.toggle('ig', ig); }
   }
   function setTheme(t) { settings.theme = t; saveSettings(); applyTheme(); }
-  function saveSettings() { try { var o = {}; o[SET_KEY] = settings; chrome.storage.local.set(o); } catch (e) {} }
+  // merge into the stored object: ar_settings.lang belongs to ARI18N (never write a stale copy back)
+  function saveSettings() {
+    try {
+      chrome.storage.local.get(SET_KEY, function (o) {
+        var cur = (o && o[SET_KEY]) || {}; cur.mode = settings.mode; cur.theme = settings.theme;
+        var w = {}; w[SET_KEY] = cur; chrome.storage.local.set(w);
+      });
+    } catch (e) {}
+  }
   function foldersGet() {
     return new Promise(function (res) { try { chrome.storage.local.get(FOLD_KEY, function (o) { res((o && o[FOLD_KEY]) || []); }); } catch (e) { res([]); } });
   }
@@ -210,26 +222,26 @@
     }).then(refreshSaved);
   }
   function folderMenu(reel) {
-    var box = el('div', { class: 'fmenu' }, [el('div', { class: 'fempty', text: 'جارٍ التحميل…' })]);
+    var box = el('div', { class: 'fmenu' }, [el('div', { class: 'fempty', text: T('app.f.loading') })]);
     function paint() {
       Promise.all([foldersGet(), libGet()]).then(function (x) {
         var folders = x[0], r = x[1].find(function (y) { return keyOf(y) === keyOf(reel); });
         var mine = (r && r.folders) || [];
         box.textContent = '';
-        if (!folders.length) box.appendChild(el('div', { class: 'fempty', text: 'لا توجد مجلدات بعد. أنشئ مجلدًا:' }));
+        if (!folders.length) box.appendChild(el('div', { class: 'fempty', text: T('app.f.none') }));
         folders.forEach(function (f) {
           var cb = el('input', { type: 'checkbox' }); cb.checked = mine.indexOf(f.id) >= 0;
           cb.addEventListener('change', function () { setReelFolder(reel, f.id, cb.checked); });
           box.appendChild(el('label', null, [cb, el('span', { text: f.name })]));
         });
-        var inp = el('input', { class: 'field', type: 'text', placeholder: 'اسم مجلد جديد' });
+        var inp = el('input', { class: 'field', type: 'text', placeholder: T('app.f.newPh') });
         function create() {
           var name = inp.value.trim(); if (!name) return;
           var f = { id: 'f_' + Date.now().toString(36), name: name, createdAt: Date.now() };
           foldersGet().then(function (arr) { arr.push(f); return foldersSet(arr); }).then(function () { return setReelFolder(reel, f.id, true); }).then(paint);
         }
         inp.addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Enter') create(); });
-        box.appendChild(el('div', { class: 'fnew' }, [inp, btn('plus', 'إنشاء', create, 'sm primary')]));
+        box.appendChild(el('div', { class: 'fnew' }, [inp, btn('plus', T('app.f.create'), create, 'sm primary')]));
       });
     }
     paint();
@@ -237,15 +249,15 @@
   }
   function downloadReel(reel, msgEl) {
     var base = msgEl ? (msgEl.className.split(' ')[0] || 'dmsg') : 'dmsg';
-    if (msgEl) { msgEl.className = base; msgEl.textContent = 'جارٍ التنزيل…'; }
+    if (msgEl) { msgEl.className = base; msgEl.textContent = T('app.dl.busy'); }
     try {
       chrome.runtime.sendMessage({ type: 'AR_DOWNLOAD', reels: [reel], folderName: '' }, function (res) {
         var e = chrome.runtime.lastError;
         if (!msgEl) return;
-        if (e || !res || !res.ok) { msgEl.className = base + ' err'; msgEl.textContent = 'تعذّر بدء التنزيل' + (res && res.error ? ': ' + res.error : '.'); }
-        else msgEl.textContent = 'بدأ التنزيل. الملف في مجلد التنزيلات ← تحليل الريلز.';
+        if (e || !res || !res.ok) { msgEl.className = base + ' err'; msgEl.textContent = res && res.error ? T('app.dl.failWhy', { e: res.error }) : T('app.dl.fail'); }
+        else msgEl.textContent = T('app.dl.ok');
       });
-    } catch (err) { if (msgEl) { msgEl.className = base + ' err'; msgEl.textContent = 'حُدّثت الإضافة. أعد تحميل الصفحة.'; } }
+    } catch (err) { if (msgEl) { msgEl.className = base + ' err'; msgEl.textContent = T('app.err.updated'); } }
   }
 
   // ---------------------------------------------------------------- fonts (document level)
@@ -267,11 +279,12 @@
 :host{all:initial}
 *{box-sizing:border-box;margin:0;padding:0;transition:none!important;animation:none!important}
 .root,.root *{font-family:'${FONT}',system-ui,sans-serif;font-feature-settings:"swsh" 1,"liga" 1;-webkit-font-smoothing:antialiased}
-.root{direction:rtl;color:#1E1E1E;font-size:14px;line-height:1.5;font-weight:400}
+.root{color:#1E1E1E;font-size:14px;line-height:1.5;font-weight:400}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 input,select{font:inherit;color:inherit}
 .ic{display:inline-flex;width:18px;height:18px;flex:none}
 .ic svg{width:100%;height:100%;display:block}
+.root[dir=rtl]{direction:rtl}.root[dir=ltr]{direction:ltr}
 .num{font-weight:700;direction:ltr;unicode-bidi:isolate;font-feature-settings:"tnum" 1}
 .muted{color:#8A919C}
 /* buttons */
@@ -294,9 +307,9 @@ input,select{font:inherit;color:inherit}
 .backdrop{position:fixed;inset:0;background:rgba(20,24,27,.55);display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:24px}
 .panel{background:#F5F7FA;border-radius:14px;width:min(1240px,100%);height:min(900px,100%);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 24px -8px rgba(20,24,27,.25)}
 /* grid header */
-.ghead{display:flex;align-items:center;gap:16px;padding:16px 24px;background:#FFFFFF;border-bottom:1px solid #E3E8EF}
+.ghead{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;padding:16px 24px;background:#FFFFFF;border-bottom:1px solid #E3E8EF}
 .avatar{width:48px;height:48px;border-radius:999px;background:#E3E8EF;object-fit:cover;flex:none}
-.who{display:flex;flex-direction:column;min-width:0;flex:1}
+.who{display:flex;flex-direction:column;min-width:200px;flex:1}
 .who .name{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .who .meta{color:#8A919C;font-size:13px;display:flex;gap:16px;flex-wrap:wrap}
 .userform{display:flex;gap:8px;align-items:center}
@@ -306,7 +319,7 @@ input,select{font:inherit;color:inherit}
 .tgroup{display:flex;align-items:center;gap:8px}
 .tgroup .tl{color:#8A919C;font-size:13px;display:inline-flex;align-items:center;gap:4px}
 .seg{display:inline-flex;background:#F5F7FA;border:1px solid #E3E8EF;border-radius:10px;padding:2px;gap:2px}
-.seg button{height:30px;padding:0 12px;border-radius:8px;font-size:13px;color:#2A2E36;font-weight:400}
+.seg button{height:30px;padding:0 12px;white-space:nowrap;border-radius:8px;font-size:13px;color:#2A2E36;font-weight:400}
 .seg button.on{background:#FFFFFF;color:#0F6BFF;font-weight:500;box-shadow:0 1px 2px rgba(20,24,27,.08)}
 .count{margin-inline-start:auto;color:#8A919C;font-size:13px}
 .gbody{flex:1;overflow:auto;padding:24px}
@@ -345,13 +358,13 @@ input,select{font:inherit;color:inherit}
 .row:last-child{border-bottom:0}
 .row .k{display:inline-flex;align-items:center;gap:8px;color:#2A2E36}
 .row .k .ic{color:#8A919C}
-.row .v{font-size:15px;text-align:left}
+.row .v{font-size:15px;text-align:end}
 .row .v.hot{color:#0F6BFF}
-.row .v small{display:block;font-weight:400;font-size:12px;color:#8A919C;text-align:left}
+.row .v small{display:block;font-weight:400;font-size:12px;color:#8A919C;text-align:end}
 .actions{display:flex;flex-direction:column;gap:8px}
 .actions .btn{width:100%;justify-content:center}
 .tx{border:1px solid #E3E8EF;border-radius:14px;display:flex;flex-direction:column;min-height:0}
-.txbar{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border-bottom:1px solid #E3E8EF}
+.txbar{display:flex;align-items:center;gap:8px;padding:8px;padding-inline-start:12px;border-bottom:1px solid #E3E8EF}
 .txbar .t{flex:1;font-weight:500;padding-inline-start:4px}
 .txbody{padding:12px 16px;max-height:320px;overflow:auto;font-size:14px;line-height:1.8;white-space:pre-wrap;color:#1E1E1E}
 .txbody .seg-line{display:flex;gap:12px}
@@ -413,7 +426,7 @@ input,select{font:inherit;color:inherit}
 .spacer{flex:1}
 /* stats card */
 .scard{position:fixed;left:16px;top:16px;width:300px;background:#FFFFFF;border:1px solid #E3E8EF;border-radius:14px;box-shadow:0 8px 24px -8px rgba(20,24,27,.25);pointer-events:auto;display:flex;flex-direction:column;max-height:calc(100vh - 32px)}
-.shead{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px}
+.shead{display:flex;align-items:center;gap:8px;padding:8px;padding-inline-start:12px}
 .shead .t{flex:1;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-inline-start:4px}
 .sbody{padding:0 12px 12px;display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0}
 .sbody .row{padding:8px 12px}
@@ -457,7 +470,7 @@ input,select{font:inherit;color:inherit}
   host.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;z-index:2147483000;pointer-events:none;';
   var shadow = host.attachShadow({ mode: 'open' });
   shadow.appendChild(el('style', { text: CSS }));
-  var root = el('div', { class: 'root', dir: 'rtl', lang: 'ar' });
+  var root = el('div', { class: 'root', dir: I.dir(), lang: I.lang() });
   shadow.appendChild(root);
   (document.body || document.documentElement).appendChild(host);
   // keep the host attached if the SPA replaces body children
@@ -483,7 +496,7 @@ input,select{font:inherit;color:inherit}
   // ---------------------------------------------------------------- launcher
   // No floating button: on a profile page a small «ريلز مرتبة» entry sits in Instagram's own tab row
   // (المنشورات / ريلز / …). Re-inserted if Instagram re-renders. The popup and Alt+Shift+R stay.
-  var entryHost = null, entryRoot = null, entryBtn = null;
+  var entryHost = null, entryRoot = null, entryBtn = null, entryLbl = null;
   function ensureEntry() {
     var onProfile = state.page && state.page.kind === 'profile';
     if (!onProfile) { if (entryHost && entryHost.isConnected) entryHost.remove(); return; }
@@ -495,9 +508,9 @@ input,select{font:inherit;color:inherit}
       entryHost.style.cssText = 'display:flex;align-items:center;justify-content:center;flex:1 1 0;min-width:0;';
       var sh = entryHost.attachShadow({ mode: 'open' });
       sh.appendChild(el('style', { text: CSS }));
-      entryRoot = el('div', { class: 'root', dir: 'rtl', lang: 'ar' });
-      entryBtn = el('button', { class: 'entry', type: 'button', title: 'تحليل الريلز: ريلز هذا الحساب مرتبة حسب التميّز (Alt+Shift+R)', onclick: function () { toggleGrid(); } },
-        [iconEl('chart-line-up'), el('span', { text: 'ريلز مرتبة' })]);
+      entryRoot = el('div', { class: 'root', dir: I.dir(), lang: I.lang() });
+      entryBtn = el('button', { class: 'entry', type: 'button', title: T('app.entryTitle'), onclick: function () { toggleGrid(); } },
+        [iconEl('chart-line-up'), (entryLbl = el('span', { text: T('app.sorted') }))]);
       entryRoot.appendChild(entryBtn);
       sh.appendChild(entryRoot);
       applyTheme();
@@ -539,7 +552,7 @@ input,select{font:inherit;color:inherit}
       inlineHost.style.cssText = 'display:block;width:100%;max-width:1240px;margin:0 auto;padding:0 16px;box-sizing:border-box;position:relative;z-index:1;';
       var sh = inlineHost.attachShadow({ mode: 'open' });
       sh.appendChild(el('style', { text: CSS }));
-      inlineRoot = el('div', { class: 'root', dir: 'rtl', lang: 'ar' });
+      inlineRoot = el('div', { class: 'root', dir: I.dir(), lang: I.lang() });
       sh.appendChild(inlineRoot);
       applyTheme();
     }
@@ -589,9 +602,9 @@ input,select{font:inherit;color:inherit}
   function buildGrid() {
     gridEls = {};
     gridEls.avatar = el('img', { class: 'avatar', alt: '', referrerpolicy: 'no-referrer' });
-    gridEls.name = el('div', { class: 'name', text: 'ريلز مرتبة' });
+    gridEls.name = el('div', { class: 'name', text: T('app.sorted') });
     gridEls.meta = el('div', { class: 'meta' });
-    gridEls.input = el('input', { class: 'field', type: 'text', placeholder: 'اسم الحساب', dir: 'ltr', style: 'width:180px', onkeydown: function (e) {
+    gridEls.input = el('input', { class: 'field', type: 'text', placeholder: T('app.userPh'), dir: 'ltr', style: 'width:180px', onkeydown: function (e) {
       if (e.key === 'Enter') submitUser();
     } });
     function submitUser() {
@@ -601,21 +614,23 @@ input,select{font:inherit;color:inherit}
     var head = el('div', { class: 'ghead' }, [
       gridEls.avatar,
       el('div', { class: 'who' }, [gridEls.name, gridEls.meta]),
-      el('div', { class: 'userform' }, [gridEls.input, btn('magnifying-glass', 'عرض', submitUser, 'primary')]),
-      btn('folder-simple', 'المجلدات', function () { try { chrome.runtime.sendMessage({ type: 'AR_OPEN_LIBRARY' }); } catch (e) {} }, '', 'افتح المكتبة: المجلدات وتنزيل الكل'),
-      el('div', { class: 'modesw', title: 'مكان الإضافة' }, [segControl([['inline', 'داخل إنستغرام'], ['separate', 'نافذة منفصلة']], settings.mode, setMode)]),
-      el('div', { class: 'modesw', title: 'ألوان الإضافة' }, [segControl([['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']], settings.theme, setTheme)]),
-      btn('x', null, closeGrid, 'icon ghost', 'إغلاق (Esc)')
+      el('div', { class: 'userform' }, [gridEls.input, btn('magnifying-glass', T('app.show'), submitUser, 'primary')]),
+      btn('folder-simple', T('app.folders'), function () { try { chrome.runtime.sendMessage({ type: 'AR_OPEN_LIBRARY' }); } catch (e) {} }, '', T('app.foldersTitle')),
+      el('div', { class: 'modesw', title: T('app.modeTitle') }, [segControl([['inline', T('app.mode.inline')], ['separate', T('app.mode.separate')]], settings.mode, setMode)]),
+      el('div', { class: 'modesw', title: T('app.themeTitle') }, [segControl([['auto', T('app.theme.auto')], ['light', T('app.theme.light')], ['dark', T('app.theme.dark')]], settings.theme, setTheme)]),
+      // language names in their own language; picking one re-renders everything open (I.onChange)
+      el('div', { class: 'modesw langsw', title: T('app.langTitle') }, [segControl([['auto', T('app.lang.auto')], ['ar', T('app.lang.ar')], ['en', T('app.lang.en')]], I.pref(), function (p) { I.set(p); })]),
+      btn('x', null, closeGrid, 'icon ghost', T('app.close'))
     ]);
     gridEls.count = el('div', { class: 'count' });
     var toolbar = el('div', { class: 'toolbar' }, [
-      el('div', { class: 'tgroup' }, [el('span', { class: 'tl' }, [iconEl('sort-ascending'), 'الترتيب']),
+      el('div', { class: 'tgroup' }, [el('span', { class: 'tl' }, [iconEl('sort-ascending'), T('app.sortBy')]),
         (gridEls.sortWrap = el('span', { style: 'display:contents' }))]),
-      el('div', { class: 'tgroup' }, [el('span', { class: 'tl' }, [iconEl('funnel'), 'أقل تميّز']),
-        segControl([[0, 'الكل'], [2, '2×'], [3, '3×'], [5, '5×'], [10, '10×']], state.minOutlier, function (v) { state.minOutlier = v; renderGridBody(); })]),
-      el('div', { class: 'tgroup' }, [el('span', { class: 'tl' }, [iconEl('squares-four'), 'عدد الريلز']),
-        segControl([[30, '30'], [60, '60'], [120, '120'], [500, 'الكل']], state.limit, function (v) { state.limit = v; gridEls.custom.value = ''; if (state.username) loadProfile(state.username); }),
-        (gridEls.custom = el('input', { class: 'field', type: 'number', min: '1', max: '500', placeholder: 'مخصص', title: 'اكتب أي عدد من 1 إلى 500 ثم Enter', style: 'width:84px;height:34px', dir: 'ltr',
+      el('div', { class: 'tgroup' }, [el('span', { class: 'tl' }, [iconEl('funnel'), T('app.minOutlier')]),
+        segControl([[0, T('app.all')], [2, '2×'], [3, '3×'], [5, '5×'], [10, '10×']], state.minOutlier, function (v) { state.minOutlier = v; renderGridBody(); })]),
+      el('div', { class: 'tgroup' }, [el('span', { class: 'tl' }, [iconEl('squares-four'), T('app.count')]),
+        segControl([[30, '30'], [60, '60'], [120, '120'], [500, T('app.all')]], state.limit, function (v) { state.limit = v; gridEls.custom.value = ''; if (state.username) loadProfile(state.username); }),
+        (gridEls.custom = el('input', { class: 'field', type: 'number', min: '1', max: '500', placeholder: T('app.customPh'), title: T('app.customTitle'), style: 'width:84px;height:34px', dir: 'ltr',
           value: [30, 60, 120, 500].indexOf(state.limit) < 0 ? String(state.limit) : '',
           onkeydown: function (e) {
             e.stopPropagation();
@@ -631,7 +646,7 @@ input,select{font:inherit;color:inherit}
     gridEls.body = el('div', { class: 'gbody' });
     paintSort();
     var inline = settings.mode === 'inline';
-    var panel = el('div', { class: 'panel' + (inline ? ' inline' : ''), role: inline ? 'region' : 'dialog', 'aria-label': 'ريلز مرتبة' }, [head, toolbar, gridEls.body]);
+    var panel = el('div', { class: 'panel' + (inline ? ' inline' : ''), role: inline ? 'region' : 'dialog', 'aria-label': T('app.sorted') }, [head, toolbar, gridEls.body]);
     if (inline) { gridLayer = panel; inlineMount().appendChild(panel); }
     else {
       gridLayer = el('div', { class: 'backdrop', onmousedown: function (e) { if (e.target === gridLayer) closeGrid(); } }, [panel]);
@@ -644,12 +659,13 @@ input,select{font:inherit;color:inherit}
     if (!gridEls.sortWrap) return;
     var reels = (state.data && state.data.reels) || [];
     var has = function (k) { return reels.some(function (r) { return r[k] != null; }); };
-    var opts = [['outlier', 'نقاط التميّز'], ['shares', 'المشاركات']];
-    if (has('reposts')) opts.push(['reposts', 'إعادة النشر']);
-    if (has('shareOutlier')) opts.push(['shareOutlier', 'تميّز المشاركات']);
-    opts.push(['views', 'المشاهدات'], ['likes', 'الإعجابات'], ['comments', 'التعليقات'], ['newest', 'الأحدث']);
+    var opts = ['outlier', 'shares'];
+    if (has('reposts')) opts.push('reposts');
+    if (has('shareOutlier')) opts.push('shareOutlier');
+    opts.push('views', 'likes', 'comments', 'newest');
+    opts = opts.map(function (k) { return [k, T('app.sort.' + k)]; });
     if (!opts.some(function (o) { return o[0] === state.sort; })) state.sort = 'outlier';
-    var sig = opts.map(function (o) { return o[0]; }).join(',') + '|' + state.sort;
+    var sig = opts.map(function (o) { return o[0]; }).join(',') + '|' + state.sort + '|' + I.lang();
     if (gridEls.sortWrap.__sig === sig) return;
     gridEls.sortWrap.__sig = sig;
     gridEls.sortWrap.textContent = '';
@@ -683,13 +699,13 @@ input,select{font:inherit;color:inherit}
       gridEls.avatar.style.visibility = p.pic ? 'visible' : 'hidden';
       gridEls.name.textContent = p.fullName || p.username;
       gridEls.meta.appendChild(el('span', { dir: 'ltr', text: '@' + p.username }));
-      if (p.followers != null) gridEls.meta.appendChild(el('span', null, [el('span', { class: 'num', text: fmtNum(p.followers) }), ' متابع']));
-      if (d.median) gridEls.meta.appendChild(el('span', null, ['الوسيط ', el('span', { class: 'num', text: fmtNum(d.median) }), ' مشاهدة']));
-      if (d.medianShares) gridEls.meta.appendChild(el('span', null, ['وسيط المشاركات ', el('span', { class: 'num', text: fmtNum(d.medianShares) })]));
+      if (p.followers != null) gridEls.meta.appendChild(el('span', null, tn('app.followers', { n: el('span', { class: 'num', text: fmtNum(p.followers) }) })));
+      if (d.median) gridEls.meta.appendChild(el('span', null, tn('app.median', { n: el('span', { class: 'num', text: fmtNum(d.median) }) })));
+      if (d.medianShares) gridEls.meta.appendChild(el('span', null, tn('app.medianShares', { n: el('span', { class: 'num', text: fmtNum(d.medianShares) }) })));
     } else {
       gridEls.avatar.style.visibility = 'hidden';
-      gridEls.name.textContent = state.username ? '\u2066@' + state.username + '\u2069' : 'ريلز مرتبة';
-      gridEls.meta.textContent = state.username ? '' : 'اكتب اسم حساب، أو افتح صفحة حساب ثم اضغط الزر.';
+      gridEls.name.textContent = state.username ? '\u2066@' + state.username + '\u2069' : T('app.sorted');
+      gridEls.meta.textContent = state.username ? '' : T('app.typeUser');
     }
   }
 
@@ -713,20 +729,20 @@ input,select{font:inherit;color:inherit}
     var body = gridEls.body;
     body.textContent = '';
     gridEls.count.textContent = '';
-    if (!state.username) { body.appendChild(stateBox('magnifying-glass', 'افتح صفحة حساب في ' + platformName(state.platform) + '، أو اكتب اسم الحساب في الأعلى.')); return; }
-    if (state.loading) { body.appendChild(stateBox('clock', 'جارٍ تحميل الريلز…')); return; }
-    if (state.error) { body.appendChild(stateBox('warning-circle', state.error, true, btn('arrow-clockwise', 'إعادة المحاولة', function () { loadProfile(state.username); }))); return; }
+    if (!state.username) { body.appendChild(stateBox('magnifying-glass', T('app.openProfile', { p: platformName(state.platform) }))); return; }
+    if (state.loading) { body.appendChild(stateBox('clock', T('app.loadingReels'))); return; }
+    if (state.error) { body.appendChild(stateBox('warning-circle', state.error, true, btn('arrow-clockwise', T('app.retry'), function () { loadProfile(state.username); }))); return; }
     var all = (state.data && state.data.reels) || [];
     state.list = sortedFiltered();
-    gridEls.count.appendChild(el('span', null, [el('span', { class: 'num', text: String(state.list.length) }), ' من ', el('span', { class: 'num', text: String(all.length) }), ' ريل']));
-    if (!all.length) { body.appendChild(stateBox('film-reel', 'لا توجد ريلز في هذا الحساب.')); return; }
-    if (!state.list.length) { body.appendChild(stateBox('funnel', 'لا توجد ريلز بهذا الحد من التميّز. خفّف الفلتر.')); return; }
+    gridEls.count.appendChild(el('span', null, tn('app.countOf', { a: el('span', { class: 'num', text: String(state.list.length) }), b: el('span', { class: 'num', text: String(all.length) }) })));
+    if (!all.length) { body.appendChild(stateBox('film-reel', T('app.noReels'))); return; }
+    if (!state.list.length) { body.appendChild(stateBox('funnel', T('app.noMatch'))); return; }
     if (state.data && state.data.note) body.appendChild(el('div', { class: 'notice', text: state.data.note }));
     var grid = el('div', { class: 'grid' });
     state.list.forEach(function (r, i) { grid.appendChild(cardEl(r, i)); });
     body.appendChild(grid);
     if (all.length >= state.limit && state.limit < 120) {
-      body.appendChild(el('div', { class: 'more' }, [btn('download-simple', 'تحميل المزيد (' + (state.limit === 30 ? 60 : 120) + ')', function () {
+      body.appendChild(el('div', { class: 'more' }, [btn('download-simple', T('app.loadMore', { n: state.limit === 30 ? 60 : 120 }), function () {
         state.limit = state.limit === 30 ? 60 : 120;
         buildGridAgain();
         loadProfile(state.username);
@@ -754,7 +770,7 @@ input,select{font:inherit;color:inherit}
       el('div', { class: 'cstats' }, [
         el('span', null, [iconEl('eye'), el('span', { class: 'num', text: fmtNum(r.views) })]),
         el('span', null, [iconEl('heart'), el('span', { class: 'num', text: fmtNum(r.likes) })]),
-        el('span', { title: 'المشاركات' }, [iconEl('paper-plane-tilt'), el('span', { class: 'num', text: fmtNum(r.shares) })])
+        el('span', { title: T('app.shares') }, [iconEl('paper-plane-tilt'), el('span', { class: 'num', text: fmtNum(r.shares) })])
       ]),
       el('div', { class: 'cdate', text: relTime(r.takenAt) })
     ]);
@@ -776,7 +792,7 @@ input,select{font:inherit;color:inherit}
     b.className = 'btn' + (on ? ' on' : '') + (compact ? '' : '');
     b.innerHTML = '';
     b.appendChild(iconEl(on ? 'bookmark-simple-fill' : 'bookmark-simple'));
-    b.appendChild(el('span', { class: 'lbl', text: on ? 'محفوظ' : 'حفظ' }));
+    b.appendChild(el('span', { class: 'lbl', text: on ? T('app.saved') : T('app.save') }));
   }
 
   function statRows(r) {
@@ -785,15 +801,15 @@ input,select{font:inherit;color:inherit}
       return el('div', { class: 'row' }, [el('span', { class: 'k' }, [iconEl(iconName), label]), el('span', { class: 'v num' + (cls ? ' ' + cls : '') }, valueNode)]);
     }
     return el('div', { class: 'rows' }, [
-      row('eye', 'المشاهدات', fmtNum(r.views)),
-      row('heart', 'الإعجابات', fmtNum(r.likes)),
-      row('chat-circle', 'التعليقات', fmtNum(r.comments)),
-      row('paper-plane-tilt', 'المشاركات', [fmtNum(r.shares), el('small', { text: r.shareRate != null ? fmtPct(r.shareRate) + ' من المشاهدات' : r.shares == null ? 'لم يرسلها إنستغرام' : '' })]),
-      r.reposts != null ? row('repeat', 'إعادة النشر', fmtNum(r.reposts)) : null,
-      el('div', { class: 'row' }, [el('span', { class: 'k' }, [iconEl('bookmark-simple'), 'الحفظ']),
-        el('span', { class: 'v', style: 'font-weight:400;font-size:12px;color:var(--mut)', text: 'إنستغرام لا يُظهر عدد الحفظ إلا لصاحب الحساب' })]),
-      row('lightning', 'نقاط التميّز', r.outlier != null ? fmtOutlier(r.outlier) : '—', hot ? 'hot' : ''),
-      el('div', { class: 'row' }, [el('span', { class: 'k' }, [iconEl('calendar-blank'), 'تاريخ النشر']),
+      row('eye', T('app.views'), fmtNum(r.views)),
+      row('heart', T('app.likes'), fmtNum(r.likes)),
+      row('chat-circle', T('app.comments'), fmtNum(r.comments)),
+      row('paper-plane-tilt', T('app.shares'), [fmtNum(r.shares), el('small', { text: r.shareRate != null ? T('app.ofViews', { p: fmtPct(r.shareRate) }) : r.shares == null ? T('app.notSent') : '' })]),
+      r.reposts != null ? row('repeat', T('app.reposts'), fmtNum(r.reposts)) : null,
+      el('div', { class: 'row' }, [el('span', { class: 'k' }, [iconEl('bookmark-simple'), T('app.saves')]),
+        el('span', { class: 'v', style: 'font-weight:400;font-size:12px;color:var(--mut)', text: T('app.savesNote') })]),
+      row('lightning', T('app.outlier'), r.outlier != null ? fmtOutlier(r.outlier) : '—', hot ? 'hot' : ''),
+      el('div', { class: 'row' }, [el('span', { class: 'k' }, [iconEl('calendar-blank'), T('app.published')]),
         el('span', { class: 'v', style: 'font-weight:500' }, [relTime(r.takenAt), el('small', { class: 'num', style: 'font-weight:400', text: fmtDate(r.takenAt) })])])
     ]);
   }
@@ -807,19 +823,19 @@ input,select{font:inherit;color:inherit}
       var t = transcripts[k]; if (!t || !t.ok) return;
       var txt = showTs && t.segments && t.segments.length
         ? t.segments.map(function (s) { return '[' + fmtTime(s.start) + '] ' + s.text; }).join('\n') : t.text;
-      copyText(txt).then(function () { copyBtn.title = 'نُسخ'; copyLbl.textContent = 'نُسخ'; setTimeout(function () { copyLbl.textContent = 'نسخ'; }, 1500); });
-    }, 'sm', 'نسخ النص');
-    var copyLbl = el('span', { class: 'lbl', text: 'نسخ' }); copyBtn.appendChild(copyLbl);
-    var tsBtn = btn('clock', 'التوقيت', function () {
+      copyText(txt).then(function () { copyBtn.title = T('app.tx.copied'); copyLbl.textContent = T('app.tx.copied'); setTimeout(function () { copyLbl.textContent = T('app.tx.copy'); copyBtn.title = T('app.tx.copyTitle'); }, 1500); });
+    }, 'sm', T('app.tx.copyTitle'));
+    var copyLbl = el('span', { class: 'lbl', text: T('app.tx.copy') }); copyBtn.appendChild(copyLbl);
+    var tsBtn = btn('clock', T('app.tx.times'), function () {
       showTs = !showTs; tsBtn.className = 'btn sm' + (showTs ? ' on' : ''); paint();
-    }, 'sm', 'إظهار التوقيت');
-    var wrap = el('div', { class: 'tx' }, [el('div', { class: 'txbar' }, [el('span', { class: 't', text: 'النص' }), tsBtn, copyBtn]), body]);
+    }, 'sm', T('app.tx.timesTitle'));
+    var wrap = el('div', { class: 'tx' }, [el('div', { class: 'txbar' }, [el('span', { class: 't', text: T('app.tx.title') }), tsBtn, copyBtn]), body]);
     function paint() {
       var t = transcripts[k];
       body.className = 'txbody'; body.textContent = '';
       copyBtn.disabled = tsBtn.disabled = !(t && t.ok);
-      if (!t) { body.className = 'txbody muted'; body.textContent = 'جارٍ جلب النص…'; return; }
-      if (!t.ok) { body.className = 'txbody err'; body.textContent = t.reason || 'لا يوجد نص لهذا الريل.'; return; }
+      if (!t) { body.className = 'txbody muted'; body.textContent = T('app.tx.loading'); return; }
+      if (!t.ok) { body.className = 'txbody err'; body.textContent = t.reason || T('app.tx.none'); return; }
       if (showTs && t.segments && t.segments.length) {
         t.segments.forEach(function (s) {
           body.appendChild(el('div', { class: 'seg-line' }, [
@@ -832,7 +848,7 @@ input,select{font:inherit;color:inherit}
     paint();
     if (!transcripts[k]) {
       dataCall('getTranscript', reel.code || reel.url).then(function (t) {
-        transcripts[k] = t || { ok: false, reason: 'لم يصل أي نص.' };
+        transcripts[k] = t || { ok: false, reason: T('app.tx.empty') };
         attachTranscriptIfSaved(reel, transcripts[k]);
         if (wrap.isConnected) paint();
       }, function (e) {
@@ -857,17 +873,17 @@ input,select{font:inherit;color:inherit}
     var sb = el('button', { type: 'button', class: 'btn', onclick: function () { toggleSave(reel); } });
     paintSave(sb, reel);
     saveButtons.push({ btn: sb, reel: reel });
-    var txBtn = btn('waveform', 'تفريغ النص', function () { opts.onTranscript(); });
-    var openBtn = btn(reel.platform === 'youtube' ? 'youtube-logo' : 'instagram-logo', opts.short ? 'فتح' : 'فتح في ' + platformName(reel.platform), function () {
+    var txBtn = btn('waveform', T('app.transcribe'), function () { opts.onTranscript(); });
+    var openBtn = btn(reel.platform === 'youtube' ? 'youtube-logo' : 'instagram-logo', opts.short ? T('app.open') : T('app.openOn', { p: platformName(reel.platform) }), function () {
       window.open(reel.url, '_blank', 'noopener');
     });
     // folder + download, with their own space under the buttons
     var slot = el('div'), msgEl = el('div', { class: 'smsg' });
-    var folderBtn = btn('folder-simple', opts.short ? 'مجلد' : 'إضافة إلى مجلد', function () {
+    var folderBtn = btn('folder-simple', opts.short ? T('app.folder') : T('app.addFolder'), function () {
       if (slot.__k === 'f') { slot.textContent = ''; slot.__k = ''; return; }
       slot.textContent = ''; slot.__k = 'f'; slot.appendChild(folderMenu(reel));
     });
-    var dlBtn = btn('download-simple', opts.short ? 'تنزيل' : 'تنزيل المقطع', function () { downloadReel(reel, msgEl); });
+    var dlBtn = btn('download-simple', opts.short ? T('app.download') : T('app.downloadClip'), function () { downloadReel(reel, msgEl); });
     return el('div', { class: 'actions' }, [sb, folderBtn, dlBtn, txBtn, openBtn, msgEl, slot]);
   }
 
@@ -896,24 +912,27 @@ input,select{font:inherit;color:inherit}
     renderViewer();
   }
 
-  function renderViewer() {
-    var keepRate = V && V.video ? V.video.playbackRate : playerPrefs.rate;
-    if (V && V.video) { try { V.video.pause(); V.video.removeAttribute('src'); V.video.load(); } catch (e) {} }
-    if (V && V.raf) cancelAnimationFrame(V.raf);
-    if (viewerLayer) viewerLayer.remove();
-    playerPrefs.rate = keepRate;
+  // keep = same reel, new language: the playing <video> moves into the new layout (no reload, no restart)
+  function renderViewer(keep) {
     var i = state.viewer.index, r = state.list[i], n = state.list.length;
+    var reuse = keep && V && V.video && V.reel === r ? V.video : null;
+    var txWasOpen = !!(keep && V && V.txOpen);
+    var keepRate = V && V.video ? V.video.playbackRate : playerPrefs.rate;
+    if (V && V.video && !reuse) { try { V.video.pause(); V.video.removeAttribute('src'); V.video.load(); } catch (e) {} }
+    if (V && V.raf) cancelAnimationFrame(V.raf);
+    var oldLayer = viewerLayer;
+    playerPrefs.rate = keepRate;
     V = { reel: r };
 
-    // side panel (first child → right side in RTL)
-    var prevB = btn('caret-right', null, function () { go(-1); }, 'icon ghost', 'السابق (→)');
-    var nextB = btn('caret-left', null, function () { go(1); }, 'icon ghost', 'التالي (←)');
+    // side panel (first child → start side: right in Arabic, left in English)
+    var prevB = btn(rtl() ? 'caret-right' : 'caret-left', null, function () { go(-1); }, 'icon ghost', T('app.v.prev'));
+    var nextB = btn(rtl() ? 'caret-left' : 'caret-right', null, function () { go(1); }, 'icon ghost', T('app.v.next'));
     prevB.disabled = i === 0; nextB.disabled = i === n - 1;
     var top = el('div', { class: 'vtop' }, [
       prevB,
-      el('div', { class: 'pos' }, [el('span', { class: 'num', text: String(i + 1) }), ' من ', el('span', { class: 'num', text: String(n) })]),
+      el('div', { class: 'pos' }, tn('app.v.pos', { i: el('span', { class: 'num', text: String(i + 1) }), n: el('span', { class: 'num', text: String(n) }) })),
       nextB,
-      btn('x', null, closeViewer, 'icon ghost', 'إغلاق (Esc)')
+      btn('x', null, closeViewer, 'icon ghost', T('app.close'))
     ]);
     var txSlot = el('div');
     var scroll = el('div', { class: 'vscroll' }, [
@@ -921,8 +940,9 @@ input,select{font:inherit;color:inherit}
       r.caption ? el('div', { class: 'caption', dir: 'auto', text: r.caption }) : null,
       statRows(r),
       actionButtons(r, { onTranscript: function () {
-        if (txSlot.firstChild) { txSlot.textContent = ''; return; }
+        if (txSlot.firstChild) { txSlot.textContent = ''; if (V) V.txOpen = false; return; }
         txSlot.appendChild(transcriptBlock(r, { seek: function (t) { if (V && V.video) { V.video.currentTime = t; } } }));
+        if (V) V.txOpen = true;
         txSlot.scrollIntoView({ block: 'nearest' });
       } }),
       txSlot
@@ -933,7 +953,11 @@ input,select{font:inherit;color:inherit}
     var stage = el('div', { class: 'vstage' });
     var box = el('div', { class: 'vbox' });
     stage.appendChild(el('div', { class: 'vframe' }, [box]));
-    if (r.videoUrl) {
+    if (reuse) {
+      box.appendChild(reuse);
+      V.video = reuse;
+      stage.appendChild(buildControls(reuse));
+    } else if (r.videoUrl) {
       var v = el('video', { src: r.videoUrl, playsinline: true, autoplay: true, loop: true, preload: 'auto', poster: r.thumb || null });
       v.volume = playerPrefs.volume; v.muted = playerPrefs.muted; v.playbackRate = playerPrefs.rate;
       box.appendChild(v);
@@ -944,32 +968,34 @@ input,select{font:inherit;color:inherit}
     } else {
       box.appendChild(el('img', { src: r.thumb || '', alt: '', referrerpolicy: 'no-referrer' }));
       box.appendChild(el('div', { class: 'novid' }, [
-        el('p', { text: 'لا يتوفر رابط مباشر للفيديو هنا.' }),
-        btn('play', 'افتح الريل لتشغيله', function () { window.open(r.url, '_blank', 'noopener'); }, 'primary')
+        el('p', { text: T('app.v.noVideo') }),
+        btn('play', T('app.v.openToPlay'), function () { window.open(r.url, '_blank', 'noopener'); }, 'primary')
       ]));
     }
-    var viewer = el('div', { class: 'viewer', role: 'dialog', 'aria-label': 'عارض الريل' }, [side, stage]);
+    var viewer = el('div', { class: 'viewer', role: 'dialog', 'aria-label': T('app.v.aria') }, [side, stage]);
     viewerLayer = el('div', { class: 'backdrop', style: 'background:rgba(20,24,27,.7)', onmousedown: function (e) { if (e.target === viewerLayer) closeViewer(); } }, [viewer]);
-    root.appendChild(viewerLayer);
+    // swap in one step (new layer in, old layer out in the same task): no empty frame in between
+    if (oldLayer) oldLayer.replaceWith(viewerLayer); else root.appendChild(viewerLayer);
+    if (txWasOpen) { txSlot.appendChild(transcriptBlock(r, { seek: function (t) { if (V && V.video) { V.video.currentTime = t; } } })); V.txOpen = true; }
     document.documentElement.setAttribute('data-ar-viewer', '');
     syncCover();
   }
 
   function buildControls(v) {
-    var scrub = el('input', { class: 'scrub', type: 'range', min: '0', max: '1000', step: '1', value: '0', 'aria-label': 'التقدم' });
+    var scrub = el('input', { class: 'scrub', type: 'range', min: '0', max: '1000', step: '1', value: '0', 'aria-label': T('app.p.progress') });
     var scrubbing = false;
     scrub.addEventListener('input', function () { scrubbing = true; var d = v.duration || 0; if (d) v.currentTime = scrub.value / 1000 * d; paintTime(); });
     scrub.addEventListener('change', function () { scrubbing = false; });
-    var playB = el('button', { class: 'pbtn', type: 'button', title: 'تشغيل / إيقاف (Space)', onclick: togglePlay });
+    var playB = el('button', { class: 'pbtn', type: 'button', title: T('app.p.play'), onclick: togglePlay });
     var playIc = el('span', { class: 'ic' }); playB.appendChild(playIc);
-    var speedB = el('button', { class: 'pbtn speed', type: 'button', title: 'السرعة ([ و ])', onclick: function () {
+    var speedB = el('button', { class: 'pbtn speed', type: 'button', title: T('app.p.speed'), onclick: function () {
       var cur = v.playbackRate, idx = SPEEDS.indexOf(cur);
       setRate(SPEEDS[(idx + 1) % SPEEDS.length] || 1);
     } });
     var speedTxt = document.createTextNode('1×'); speedB.appendChild(speedTxt);
-    var muteB = el('button', { class: 'pbtn', type: 'button', title: 'كتم (M)', onclick: function () { v.muted = !v.muted; if (!v.muted && v.volume === 0) v.volume = .5; } });
+    var muteB = el('button', { class: 'pbtn', type: 'button', title: T('app.p.mute'), onclick: function () { v.muted = !v.muted; if (!v.muted && v.volume === 0) v.volume = .5; } });
     var muteIc = el('span', { class: 'ic' }); muteB.appendChild(muteIc);
-    var vol = el('input', { class: 'vol', type: 'range', min: '0', max: '1', step: '0.05', value: String(v.volume), 'aria-label': 'الصوت' });
+    var vol = el('input', { class: 'vol', type: 'range', min: '0', max: '1', step: '0.05', value: String(v.volume), 'aria-label': T('app.p.volume') });
     vol.addEventListener('input', function () { v.volume = +vol.value; v.muted = +vol.value === 0; });
     var timeTxt = document.createTextNode('0:00 / 0:00');
     var pb = function (iconName, title, fn, extra) {
@@ -979,10 +1005,10 @@ input,select{font:inherit;color:inherit}
     };
     var row = el('div', { class: 'prow' }, [
       playB,
-      pb('arrow-counter-clockwise', 'رجوع 5 ثوانٍ (J)', function () { seekBy(-5); }, '5'),
-      pb('arrow-clockwise', 'تقديم 5 ثوانٍ (L)', function () { seekBy(5); }, '5'),
-      pb('skip-back', 'إطار للخلف (,)', function () { stepFrame(-1); }),
-      pb('skip-forward', 'إطار للأمام (.)', function () { stepFrame(1); }),
+      pb('arrow-counter-clockwise', T('app.p.back'), function () { seekBy(-5); }, '5'),
+      pb('arrow-clockwise', T('app.p.fwd'), function () { seekBy(5); }, '5'),
+      pb('skip-back', T('app.p.fbk'), function () { stepFrame(-1); }),
+      pb('skip-forward', T('app.p.ffw'), function () { stepFrame(1); }),
       speedB,
       el('span', { class: 'ptime' }, [timeTxt]),
       el('span', { class: 'spacer' }),
@@ -1041,8 +1067,8 @@ input,select{font:inherit;color:inherit}
     var k = e.key, handled = true;
     if (state.viewer) {
       if (k === 'Escape') closeViewer();
-      else if (k === 'ArrowLeft') go(1);
-      else if (k === 'ArrowRight') go(-1);
+      else if (k === 'ArrowLeft') go(rtl() ? 1 : -1);     // Arabic: ← = next; English: ← = previous
+      else if (k === 'ArrowRight') go(rtl() ? -1 : 1);
       else if (k === ' ' || k === 'k' || k === 'K') togglePlay();
       else if (k === 'j' || k === 'J') seekBy(e.shiftKey ? -10 : -5);          // Shift = 10 seconds
       else if (k === 'l' || k === 'L') seekBy(e.shiftKey ? 10 : 5);
@@ -1121,7 +1147,7 @@ input,select{font:inherit;color:inherit}
     if (k === lastKey) return;
     lastKey = k;
     dataCall('getCurrentReel').then(function (r) {
-      if (!r) { if (!currentReel) renderStatsCard(null, 'لم أجد ريلًا ظاهرًا الآن.'); return; }
+      if (!r) { if (!currentReel) renderStatsCard(null, T('app.noReel')); return; }
       if (currentReel && keyOf(currentReel) === keyOf(r) && (scardEl || (dockEl && dockHost && dockHost.isConnected))) return;
       currentReel = r;
       renderStatsCard(r);
@@ -1181,7 +1207,7 @@ input,select{font:inherit;color:inherit}
       dockHost.id = 'amine-reels-dock';
       var sh = dockHost.attachShadow({ mode: 'open' });
       sh.appendChild(el('style', { text: CSS }));
-      dockRoot = el('div', { class: 'root', dir: 'rtl', lang: 'ar' });
+      dockRoot = el('div', { class: 'root', dir: I.dir(), lang: I.lang() });
       sh.appendChild(dockRoot);
       applyTheme();
     }
@@ -1228,12 +1254,13 @@ input,select{font:inherit;color:inherit}
   window.addEventListener('scroll', trackDock, { passive: true, capture: true });
   window.addEventListener('resize', trackDock, { passive: true });
 
-  function renderDock(r, msg, isErr) {
+  var cardSlot = '';   // which panel (f = folders, t = transcript) is open under the dock / card: kept across a language change
+  function renderDock(r, msg, isErr, keepSlot) {
     ensureDockHost();
-    dockRoot.textContent = '';
+    var oldDock = dockEl && dockEl.parentNode === dockRoot ? dockEl : null;
     dockVideo = mostVisibleVideo();
     var dark = wantDark();
-    var top = el('div', { class: 'dtop' }, [el('span', { class: 'brand' }, [iconEl('chart-line-up'), 'تحليل الريلز']),
+    var top = el('div', { class: 'dtop' }, [el('span', { class: 'brand' }, [iconEl('chart-line-up'), T('app.brand')]),
       r ? el('span', { class: 'when', text: relTime(r.takenAt) + (r.takenAt ? ' · ' : '') }, r.takenAt ? [el('span', { class: 'num', style: 'font-weight:400', text: fmtDate(r.takenAt) })] : null) : null]);
     var kids = [top];
     if (!r) kids.push(el('div', { class: 'dmsg' + (isErr ? ' err' : ''), text: msg || '' }));
@@ -1243,40 +1270,48 @@ input,select{font:inherit;color:inherit}
         return el('div', { class: 'dstat' + (cls ? ' ' + cls : '') }, [el('span', { class: 'num', text: val }), el('span', { class: 'l' }, [iconEl(icn), label])]);
       }
       kids.push(el('div', { class: 'dstats' }, [
-        stat('eye', 'مشاهدة', fmtNum(r.views)), stat('heart', 'إعجاب', fmtNum(r.likes)),
-        stat('chat-circle', 'تعليق', fmtNum(r.comments)), stat('paper-plane-tilt', 'مشاركة', fmtNum(r.shares)), stat('lightning', 'التميّز', fmtOutlier(r.outlier), hot ? 'hot' : '')]));
+        stat('eye', T('app.d.view'), fmtNum(r.views)), stat('heart', T('app.d.like'), fmtNum(r.likes)),
+        stat('chat-circle', T('app.d.comment'), fmtNum(r.comments)), stat('paper-plane-tilt', T('app.d.share'), fmtNum(r.shares)), stat('lightning', T('app.d.outlier'), fmtOutlier(r.outlier), hot ? 'hot' : '')]));
       var slot = el('div'), msgEl = el('div', { class: 'dmsg' });
       var sb = el('button', { type: 'button', class: 'btn', onclick: function () { toggleSave(r); } });
       paintSave(sb, r); saveButtons.push({ btn: sb, reel: r });
       function toggleSlot(kind, build) {
-        if (slot.__kind === kind) { slot.textContent = ''; slot.__kind = ''; return; }
-        slot.textContent = ''; slot.__kind = kind; slot.appendChild(build());
+        if (slot.__kind === kind) { slot.textContent = ''; slot.__kind = ''; cardSlot = ''; return; }
+        slot.textContent = ''; slot.__kind = kind; cardSlot = kind; slot.appendChild(build());
       }
+      var builders = {
+        f: function () { return folderMenu(r); },
+        t: function () { return transcriptBlock(r, { seek: function (t) { var v = mostVisibleVideo(); if (v) v.currentTime = t; } }); }
+      };
       kids.push(el('div', { class: 'dacts' }, [
         sb,
-        btn('folder-simple', 'مجلد', function () { toggleSlot('f', function () { return folderMenu(r); }); }),
-        btn('waveform', 'النص', function () { toggleSlot('t', function () { return transcriptBlock(r, { seek: function (t) { var v = mostVisibleVideo(); if (v) v.currentTime = t; } }); }); }),
-        btn('download-simple', 'تنزيل', function () { downloadReel(r, msgEl); })
+        btn('folder-simple', T('app.folder'), function () { toggleSlot('f', builders.f); }),
+        btn('waveform', T('app.d.text'), function () { toggleSlot('t', builders.t); }),
+        btn('download-simple', T('app.download'), function () { downloadReel(r, msgEl); })
       ]));
       kids.push(msgEl, slot);
+      if (keepSlot && builders[keepSlot]) toggleSlot(keepSlot, builders[keepSlot]); else cardSlot = '';
     }
-    dockEl = el('div', { class: 'dock' + (dark ? ' dark' : '') }, kids);
+    var prevStyle = oldDock ? oldDock.style.cssText : '', prevCls = oldDock && /\bside\b/.test(oldDock.className) ? ' side' : '';
+    dockEl = el('div', { class: 'dock' + (dark ? ' dark' : '') + prevCls }, kids);
+    if (prevStyle) dockEl.style.cssText = prevStyle;
+    dockRoot.textContent = '';
     dockRoot.appendChild(dockEl);
     placeDock();
   }
 
-  function renderStatsCard(r, msg, isErr) {
+  function renderStatsCard(r, msg, isErr, keepSlot) {
     if (scardClosed) return;
-    if (settings.mode === 'inline') { if (scardEl) { scardEl.remove(); scardEl = null; } return renderDock(r, msg, isErr); }
+    if (settings.mode === 'inline') { if (scardEl) { scardEl.remove(); scardEl = null; } return renderDock(r, msg, isErr, keepSlot); }
     if (dockHost) dockHost.remove();
-    if (scardEl) scardEl.remove();
+    var oldCard = scardEl;
     var minB = btn(scardMin ? 'caret-left' : 'minus', null, function () {
       scardMin = !scardMin; scardEl.className = 'scard' + (scardMin ? ' min' : '');
       minB.innerHTML = ''; minB.appendChild(iconEl(scardMin ? 'caret-left' : 'minus'));
-      minB.title = scardMin ? 'إظهار' : 'تصغير';
-    }, 'sm icon ghost', scardMin ? 'إظهار' : 'تصغير');
-    var closeB = btn('x', null, function () { scardClosed = true; removeStatsCard(); }, 'sm icon ghost', 'إغلاق حتى تحديث الصفحة');
-    var title = el('span', { class: 't' }, r ? [el('span', { dir: 'ltr', text: '@' + (r.username || '') })] : ['تحليل الريلز']);
+      minB.title = scardMin ? T('app.c.show') : T('app.c.min');
+    }, 'sm icon ghost', scardMin ? T('app.c.show') : T('app.c.min'));
+    var closeB = btn('x', null, function () { scardClosed = true; removeStatsCard(); }, 'sm icon ghost', T('app.c.close'));
+    var title = el('span', { class: 't' }, r ? [el('span', { dir: 'ltr', text: '@' + (r.username || '') })] : [T('app.brand')]);
     var chip = r && r.outlier != null ? el('span', { class: 'chip num', text: fmtOutlier(r.outlier) }) : null;
     var head = el('div', { class: 'shead' }, [iconEl('chart-line-up'), title, chip, minB, closeB]);
     var body = el('div', { class: 'sbody' });
@@ -1284,16 +1319,43 @@ input,select{font:inherit;color:inherit}
     else {
       var txSlot = el('div'), msgEl = el('div', { class: 'smsg' });
       body.appendChild(statRows(r));
-      body.appendChild(actionButtons(r, { short: true, onTranscript: function () {
-        if (txSlot.__k === 't') { txSlot.textContent = ''; txSlot.__k = ''; return; }
-        txSlot.textContent = ''; txSlot.__k = 't';
+      var openTx = function () {
+        if (txSlot.__k === 't') { txSlot.textContent = ''; txSlot.__k = ''; cardSlot = ''; return; }
+        txSlot.textContent = ''; txSlot.__k = 't'; cardSlot = 't';
         txSlot.appendChild(transcriptBlock(r, { seek: function (t) { var v = mostVisibleVideo(); if (v) v.currentTime = t; } }));
-      } }));
+      };
+      body.appendChild(actionButtons(r, { short: true, onTranscript: openTx }));
       body.appendChild(txSlot);
+      if (keepSlot === 't') openTx(); else cardSlot = '';
     }
     scardEl = el('div', { class: 'scard' + (scardMin ? ' min' : '') }, [head, body]);
-    root.insertBefore(scardEl, root.firstChild); // under our grid / viewer windows, never on top of them
+    if (oldCard && oldCard.parentNode === root) oldCard.replaceWith(scardEl);   // one-step swap: no flicker
+    else root.insertBefore(scardEl, root.firstChild); // under our grid / viewer windows, never on top of them
   }
+
+  // ---------------------------------------------------------------- language (ARI18N.onChange)
+  // Everything open is rebuilt in place in one task (old node swapped for the new one): no reload, no empty frame.
+  function applyDir() {
+    var d = I.dir(), l = I.lang();
+    [root, inlineRoot, dockRoot, entryRoot].forEach(function (r) { if (r) { r.setAttribute('dir', d); r.setAttribute('lang', l); } });
+  }
+  function relang() {
+    applyDir();
+    if (entryBtn) { entryBtn.title = T('app.entryTitle'); entryLbl.textContent = T('app.sorted'); }
+    if (gridLayer && state.gridOpen) {
+      var old = gridLayer, inline = settings.mode === 'inline', sc = old.querySelector('.gbody'), st = sc ? sc.scrollTop : 0;
+      gridLayer = null; buildGrid();                   // buildGrid appends the new layer; take the old one out right after
+      old.remove();
+      if (gridEls.input && state.username) gridEls.input.value = state.username;
+      renderGridHead(); renderGridBody();
+      if (!inline && gridEls.body) gridEls.body.scrollTop = st;
+      if (viewerLayer && viewerLayer.parentNode === root) root.appendChild(viewerLayer);   // the viewer stays on top
+    }
+    if (state.viewer && viewerLayer) renderViewer(true);
+    if (currentReel && (scardEl || (dockEl && dockHost && dockHost.isConnected))) renderStatsCard(currentReel, null, false, cardSlot);
+    else if (isReelPage()) { lastKey = ''; pollReel(); }
+  }
+  I.onChange(function () { try { relang(); } catch (e) {} });
 
   // ---------------------------------------------------------------- wiring
   try {
@@ -1307,7 +1369,8 @@ input,select{font:inherit;color:inherit}
       window.ARData.on('navigate', function () { scardClosed = false; refreshPage(); });
     }
     refreshSaved();
-    loadSettings().then(function () { applyTheme(); refreshPage(); });
+    // first render only once the stored language is known (no Arabic → English jump)
+    Promise.all([loadSettings(), I.ready]).then(function () { applyDir(); applyTheme(); refreshPage(); });
     setInterval(function () { applyTheme(); try { ensureEntry(); } catch (e) {} }, 2000);
     setInterval(function () {
       if (location.href !== lastHref) { scardClosed = false; refreshPage(); return; }
