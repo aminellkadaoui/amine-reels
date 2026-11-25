@@ -24,7 +24,7 @@
 To update: download the new zip over the old folder, then click **Update** on the extension card.
 
 ### Shortcuts (under the reel)
-`Space` / `K` play · `J` `L` / `←` `→` 5 s · `,` `.` one frame · `[` `]` `\` speed · `M` `↑` `↓` volume · `0`–`9` jump · `Alt+Shift+R` reels grid
+`Space` / `K` play · `←` `→` previous / next reel · `J` `L` / `Shift+←` `Shift+→` 5 s (`Shift+J` `Shift+L` 10 s) · `↓` `↑` / `,` `.` one frame (`Shift` 10) · `[` `]` `\` speed · `M` mute · `0`–`9` jump · `Alt+Shift+R` reels grid
 
 ### Privacy
 Runs only in your browser. No server, no data collection, nothing sent anywhere. What you save stays on your device. See [privacy &amp; terms](https://aminellkadaoui.github.io/amine-reels/privacy.html?lang=en).

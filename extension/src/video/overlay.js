@@ -15,6 +15,7 @@
   var FLASH_MS = 1600;                  // bar stays visible this long after a shortcut
   var TOAST_MS = 700;
   var DEFAULT_FPS = 30;
+  var SEEK_SHIFT_ARROW = 5;              // Shift+← / Shift+→ seek step in seconds (owner may want 30: change it here)
   var LRM = '\u200E';
   function ltr(t) { return '\u2066' + t + '\u2069'; } // keep '+5' / '1.5×' left-to-right inside Arabic toasts
   // translations: lib/i18n.js + lib/i18n-app.js (vc.* keys). Without them (not loaded) the key itself shows, nothing breaks.
@@ -282,6 +283,91 @@
       try { v.muted = g.muted; v.volume = g.volume; } catch (er) {}
     }
   }, true);
+  // ---------- previous / next reel (← / →) ----------
+  // Instagram's own controls first (they do exactly what Instagram's ↑/↓ do), found by role/position, not by wording.
+  var RX_NEXT = /next|suivant|siguiente|weiter|التالي|التالية/i, RX_PREV = /prev|back|précédent|anterior|zurück|السابق|السابقة|رجوع/i;
+  function shown(el) { var r = el.getBoundingClientRect(); return r.width > 4 && r.height > 4 && r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth; }
+  function labelOf(el) {
+    var t = el.getAttribute('aria-label') || '';
+    var s = el.querySelector('svg[aria-label]'); if (s) t += ' ' + s.getAttribute('aria-label');
+    return t;
+  }
+  function clickable(el) { return el && el.getAttribute('aria-disabled') !== 'true' && !el.disabled; }
+  function pickByLabel(list, dir) {
+    var rx = dir > 0 ? RX_NEXT : RX_PREV, other = dir > 0 ? RX_PREV : RX_NEXT;
+    for (var i = 0; i < list.length; i++) { var l = labelOf(list[i]); if (rx.test(l) && !other.test(l)) return list[i]; }
+    return null;
+  }
+  // Feed (/reels/): a toolbar with an up button above a down button.
+  function feedButton(dir) {
+    var bars = document.querySelectorAll('[role="toolbar"]');
+    for (var i = 0; i < bars.length; i++) {
+      if (inSkippedRoot(bars[i])) continue;
+      var bs = Array.prototype.filter.call(bars[i].querySelectorAll('[role="button"],button'), function (b) { return b.querySelector('svg') && shown(b); });
+      if (!bs.length || bs.length > 2) continue;
+      var byLabel = pickByLabel(bs, dir);
+      if (byLabel) return byLabel;
+      if (bs.length === 2) {
+        bs.sort(function (a, b) { return a.getBoundingClientRect().top - b.getBoundingClientRect().top; });
+        if (bs[1].getBoundingClientRect().top - bs[0].getBoundingClientRect().top > 10) return dir > 0 ? bs[1] : bs[0];
+      }
+    }
+    return null;
+  }
+  // Post window (/reel/x/ opened from a profile): Instagram's arrows at the window's left / right edges.
+  function dialogButton(v, dir) {
+    var dlg = v.closest && v.closest('[role="dialog"]');
+    if (!dlg) return null;
+    var scope = dlg.parentElement || dlg;
+    var vb = (columnOf(reelBox(v)) || reelBox(v)).getBoundingClientRect(), mid = window.innerHeight / 2;
+    var bs = Array.prototype.filter.call(scope.querySelectorAll('button,[role="button"]'), function (b) {
+      if (!b.querySelector('svg') || !shown(b) || inSkippedRoot(b)) return false;
+      var r = b.getBoundingClientRect();
+      return r.width < 80 && r.height < 80 && Math.abs(r.top + r.height / 2 - mid) < window.innerHeight * 0.2 && (r.right <= vb.left + 2 || r.left >= vb.right - 2);
+    });
+    var byLabel = pickByLabel(bs, dir);
+    if (byLabel) return byLabel;
+    var rtl = (document.documentElement.dir || getComputedStyle(document.documentElement).direction) === 'rtl';
+    var wantRight = (dir > 0) !== rtl;  // LTR: next on the right; RTL: Instagram mirrors it
+    var best = null;
+    bs.forEach(function (b) {
+      var r = b.getBoundingClientRect(), right = r.left > vb.right - 2;
+      if (right !== wantRight) return;
+      if (!best || (wantRight ? r.left > best.getBoundingClientRect().left : r.left < best.getBoundingClientRect().left)) best = b;
+    });
+    return best;
+  }
+  function scrollerOf(el) {
+    for (var n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+      try { var cs = getComputedStyle(n); if (/auto|scroll/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 4) return n; } catch (e) {}
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+  // Fallback: the neighbour reel in the feed (vertical order), or one screen of the snap container.
+  function scrollToNeighbour(v, dir) {
+    var vt = v.getBoundingClientRect().top, best = null, bestD = Infinity;
+    var all = document.querySelectorAll('video');
+    for (var i = 0; i < all.length; i++) {
+      var o = all[i];
+      if (o === v || inSkippedRoot(o) || inPostLink(o)) continue;
+      var r = o.getBoundingClientRect();
+      if (r.width < MIN_W || r.height < MIN_H) continue;
+      var d = (r.top - vt) * dir;
+      if (d > 20 && d < bestD) { bestD = d; best = o; }
+    }
+    if (best) { reelBox(best).scrollIntoView({ block: 'center' }); return true; }
+    var sc = scrollerOf(v);
+    if (!sc) return false;
+    sc.scrollBy({ top: dir * (sc.clientHeight || window.innerHeight) });
+    return true;
+  }
+  function goReel(v, dir) {
+    var b = dialogButton(v, dir) || (!(v.closest && v.closest('[role="dialog"]')) ? feedButton(dir) : null);
+    if (b && clickable(b)) { b.click(); return true; }
+    if (v.closest && v.closest('[role="dialog"]')) return false; // first / last post in the window: nothing to do
+    return scrollToNeighbour(v, dir);
+  }
+
   var A = {
     toggle: function () {
       return act(function (v) {
@@ -296,6 +382,12 @@
         var d = durationOf(v);
         v.currentTime = clamp(v.currentTime + s, 0, d || v.currentTime + Math.max(s, 0));
         toast(T('vc.t.sec', { x: ltr((s > 0 ? '+' : '−') + Math.abs(s)) }));
+      });
+    },
+    reel: function (dir) {
+      dir = dir === 'prev' || Number(dir) < 0 ? -1 : 1;
+      return act(function (v) {
+        if (goReel(v, dir)) toast(T(dir > 0 ? 'vc.t.nextReel' : 'vc.t.prevReel'));
       });
     },
     jump: function (ratio) {
@@ -795,33 +887,34 @@
       // Shift+, and Shift+. type < and >: read the physical key
       if (e.code === 'Comma') kl = ','; else if (e.code === 'Period') kl = '.';
       var big = e.shiftKey; // Shift = 10 seconds / 10 frames
-      var fn = null, scrollKey = false;
+      var fn = null;
       switch (kl) {
         case ' ': case 'Spacebar':
           var el = e.composedPath ? e.composedPath()[0] : e.target;
           var tag = el && el.tagName ? el.tagName.toLowerCase() : '';
           if (tag === 'button' || tag === 'a' || tag === 'input' || tag === 'summary') return; // let focused controls work
-          fn = A.toggle; scrollKey = true; break;
+          fn = A.toggle; break;
         case 'k': fn = A.toggle; break;
-        case 'j': case 'ArrowLeft': fn = function () { A.seek(big ? -10 : -5); }; scrollKey = kl !== 'j'; break;
-        case 'l': case 'ArrowRight': fn = function () { A.seek(big ? 10 : 5); }; scrollKey = kl !== 'l'; break;
+        case 'j': fn = function () { A.seek(big ? -10 : -5); }; break;
+        case 'l': fn = function () { A.seek(big ? 10 : 5); }; break;
+        // ← / → : previous / next reel; with Shift: seek SEEK_SHIFT_ARROW seconds
+        case 'ArrowLeft': fn = big ? function () { A.seek(-SEEK_SHIFT_ARROW); } : function () { A.reel(-1); }; break;
+        case 'ArrowRight': fn = big ? function () { A.seek(SEEK_SHIFT_ARROW); } : function () { A.reel(1); }; break;
         case ',': fn = function () { A.step(big ? -10 : -1); }; break;
         case '.': fn = function () { A.step(big ? 10 : 1); }; break;
         case '[': fn = function () { A.speed('down'); }; break;
         case ']': fn = function () { A.speed('up'); }; break;
         case '\\': fn = function () { A.speed('reset'); }; break;
         case 'm': fn = A.mute; break;
-        case 'ArrowUp': case 'ArrowDown':
-          // YouTube Shorts uses ↑/↓ to move between shorts: leave them to YouTube there.
-          if (/(^|\.)youtube\.com$/.test(location.hostname) && location.pathname.indexOf('/shorts') === 0) return;
-          fn = kl === 'ArrowUp' ? function () { A.volume('up'); } : function () { A.volume('down'); };
-          scrollKey = true; break;
+        // ↑ = one frame forward, ↓ = one frame back (Shift: 10). Captured, so Instagram's own ↑/↓ reel switch doesn't fire.
+        case 'ArrowUp': fn = function () { A.step(big ? 10 : 1); }; break;
+        case 'ArrowDown': fn = function () { A.step(big ? -10 : -1); }; break;
         default:
           if (k && k.length === 1 && k >= '0' && k <= '9') { var n = +k; fn = function () { A.jump(n / 10); }; }
       }
       if (!fn) return;
       if (!need()) return;     // a fresh look: no visible reel → the page keeps its keys (scrolling etc.)
-      if (e.repeat && (kl === ' ' || kl === 'k' || kl === 'm')) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+      if (e.repeat && (kl === ' ' || kl === 'k' || kl === 'm' || ((kl === 'ArrowLeft' || kl === 'ArrowRight') && !big))) { e.preventDefault(); e.stopImmediatePropagation(); return; }
       e.preventDefault();
       e.stopImmediatePropagation();
       fn();
@@ -902,6 +995,7 @@
     loop: A.loop,
     pin: A.pin,
     jump: A.jump,
+    reel: A.reel,
     fps: function () { var v = need(); return v ? fpsOf(v) : null; },
     refresh: function () { scan(); return target; }
   };

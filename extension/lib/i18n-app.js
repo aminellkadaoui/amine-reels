@@ -143,14 +143,14 @@ window.ARI18N && window.ARI18N.add({
     'app.c.close': 'إغلاق حتى تحديث الصفحة',
     // video control bar (overlay.js)
     'vc.play': 'تشغيل / إيقاف (مسافة أو K)',
-    'vc.back': 'رجوع 5 ثوانٍ (J أو ←) — مع Shift: 10 ثوانٍ',
-    'vc.fwd': 'تقديم 5 ثوانٍ (L أو →) — مع Shift: 10 ثوانٍ',
-    'vc.fbk': 'فريم للخلف (,) — مع Shift: 10 فريمات',
-    'vc.ffw': 'فريم للأمام (.) — مع Shift: 10 فريمات',
+    'vc.back': 'رجوع 5 ثوانٍ (J أو Shift+←) — Shift+J: 10 ثوانٍ',
+    'vc.fwd': 'تقديم 5 ثوانٍ (L أو Shift+→) — Shift+L: 10 ثوانٍ',
+    'vc.fbk': 'فريم للخلف (↓ أو ,) — مع Shift: 10 فريمات',
+    'vc.ffw': 'فريم للأمام (↑ أو .) — مع Shift: 10 فريمات',
     'vc.speedTitle': 'السرعة: اضغط للتسريع 0.25 (])، ومع Shift للإبطاء 0.25 ([)، والنقر المزدوج أو الزر الأيمن للرجوع إلى 1× (\\)',
     'vc.speed': 'السرعة',
     'vc.mute': 'كتم / تشغيل الصوت (M)',
-    'vc.volume': 'مستوى الصوت (↑ / ↓)',
+    'vc.volume': 'مستوى الصوت',
     'vc.loop': 'تكرار المقطع',
     'vc.scrub': 'اسحب للتنقّل في المقطع',
     'vc.t.play': 'تشغيل',
@@ -161,7 +161,9 @@ window.ARI18N && window.ARI18N.add({
     'vc.t.muted': 'كتم',
     'vc.t.volume': 'الصوت {x}',
     'vc.t.loopOn': 'تكرار: يعمل',
-    'vc.t.loopOff': 'تكرار: متوقف'
+    'vc.t.loopOff': 'تكرار: متوقف',
+    'vc.t.nextReel': 'الريل التالي',
+    'vc.t.prevReel': 'الريل السابق'
   },
   en: {
     'app.hidden': 'Hidden',
@@ -289,14 +291,14 @@ window.ARI18N && window.ARI18N.add({
     'app.c.min': 'Minimise',
     'app.c.close': 'Close until the page reloads',
     'vc.play': 'Play / pause (Space or K)',
-    'vc.back': 'Back 5 s (J or ←) — Shift: 10 s',
-    'vc.fwd': 'Forward 5 s (L or →) — Shift: 10 s',
-    'vc.fbk': 'Previous frame (,) — Shift: 10 frames',
-    'vc.ffw': 'Next frame (.) — Shift: 10 frames',
+    'vc.back': 'Back 5 s (J or Shift+←) — Shift+J: 10 s',
+    'vc.fwd': 'Forward 5 s (L or Shift+→) — Shift+L: 10 s',
+    'vc.fbk': 'Previous frame (↓ or ,) — Shift: 10 frames',
+    'vc.ffw': 'Next frame (↑ or .) — Shift: 10 frames',
     'vc.speedTitle': 'Speed: click for +0.25 (]), Shift+click for −0.25 ([), double-click or right-click to reset to 1× (\\)',
     'vc.speed': 'Speed',
     'vc.mute': 'Mute / unmute (M)',
-    'vc.volume': 'Volume (↑ / ↓)',
+    'vc.volume': 'Volume',
     'vc.loop': 'Loop',
     'vc.scrub': 'Drag to seek',
     'vc.t.play': 'Play',
@@ -307,6 +309,8 @@ window.ARI18N && window.ARI18N.add({
     'vc.t.muted': 'Muted',
     'vc.t.volume': 'Volume {x}',
     'vc.t.loopOn': 'Loop: on',
-    'vc.t.loopOff': 'Loop: off'
+    'vc.t.loopOff': 'Loop: off',
+    'vc.t.nextReel': 'Next reel',
+    'vc.t.prevReel': 'Previous reel'
   }
 });
