@@ -1201,6 +1201,38 @@ input,select{font:inherit;color:inherit}
     }
     return null;
   }
+  // The colour Instagram really paints behind the column. In the post window the column itself is transparent and the
+  // window colour (dark: rgb(28,31,34), lighter than the page) sits on the column's own blocks, not on an ancestor:
+  // read it from the header block above the panel first; only then from the ancestors.
+  function opaqueIn(node, depth, minW) {
+    if (!node || node.nodeType !== 1 || node.id === 'amine-reels-dock') return null;
+    if (minW && node.getBoundingClientRect().width < minW) return null;   // only full-width blocks (never an avatar or a button)
+    try {
+      var c = getComputedStyle(node).backgroundColor, m = c && c.match(/[\d.]+/g);
+      if (m && m.length >= 3 && (m.length < 4 || +m[3] > 0.5)) return 'rgb(' + m[0] + ',' + m[1] + ',' + m[2] + ')';
+    } catch (e) { return null; }
+    if (depth <= 0) return null;
+    for (var i = 0; i < node.children.length && i < 4; i++) { var r = opaqueIn(node.children[i], depth - 1, minW); if (r) return r; }
+    return null;
+  }
+  function columnSurface(col) {
+    var inDlg = !!(col.closest && col.closest('[role="dialog"]')), minW = col.getBoundingClientRect().width * 0.8;
+    for (var i = 0; i < col.children.length && i < 3; i++) {
+      if (col.children[i].id === 'amine-reels-dock') continue;
+      var r = opaqueIn(col.children[i], 4, minW);
+      if (r) return r;
+    }
+    var own = opaqueIn(col, 0);
+    if (own) return own;
+    if (inDlg) {             // Instagram's post window uses its elevated surface (light: white)
+      try {
+        var de = getComputedStyle(document.documentElement);
+        var v = (de.getPropertyValue('--ig-elevated-background') || de.getPropertyValue('--ig-primary-background') || '').trim();
+        if (v) return 'rgb(' + v + ')';
+      } catch (e) {}
+    }
+    return surfaceOf(col);
+  }
   function ensureDockHost() {
     if (!dockHost) {
       dockHost = document.createElement('div');
@@ -1226,7 +1258,7 @@ input,select{font:inherit;color:inherit}
       dockEl.className = dockEl.className.replace(/\bside\b/g, '').trim();
       dockEl.style.cssText = '';
       // surfaces = exactly the column's own colour (no darker / blacker panel inside Instagram's column)
-      var cc = surfaceOf(col);
+      var cc = columnSurface(col);
       if (cc) { dockRoot.style.setProperty('--w', cc); dockRoot.style.setProperty('--bg', cc); }
       return;
     }
