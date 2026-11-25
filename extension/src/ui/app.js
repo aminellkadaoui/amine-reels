@@ -431,6 +431,21 @@ input,select{font:inherit;color:inherit}
     '.root.ig.dark{--w:rgb(var(--ig-elevated-background,33,35,40));--bg:rgb(var(--ig-primary-background,12,16,20));--line:rgb(var(--ig-elevated-separator,54,54,54));' +
     '--t1:rgb(var(--ig-primary-text,245,245,245));--t2:rgb(var(--ig-primary-text,245,245,245));--mut:rgb(var(--ig-secondary-text,168,168,168))}\n' +
     '.root.dark .seg button.on{box-shadow:none}.root.dark .backdrop{background:rgba(0,0,0,.6)}\n' + CSS;
+  // Native look: the reel panel on the page uses Instagram's own page colour and Instagram's own grey buttons,
+  // so it reads as part of Instagram (no separate grey card on a black page).
+  CSS += '\n.root .dock.side{background:#FFFFFF;border-color:#DBDBDB}' +
+    '.root.dark .dock.side{background:#0C1014;border-color:#262626}' +
+    '.root.ig .dock.side{background:rgb(var(--ig-primary-background,255,255,255));border-color:rgb(var(--ig-separator,219,219,219))}' +
+    '.root.ig.dark .dock.side{background:rgb(var(--ig-primary-background,12,16,20));border-color:rgb(var(--ig-separator,38,38,38))}' +
+    '.root .dock .btn{background:#EFEFEF;border-color:transparent;border-radius:8px;color:#000000;font-weight:500}' +
+    '.root .dock .btn:hover{background:#DBDBDB}' +
+    '.root.dark .dock .btn{background:#25292E;color:#F5F5F5}.root.dark .dock .btn:hover{background:#363636}' +
+    '.root.ig .dock .btn{background:rgb(var(--ig-secondary-button-background,239,239,239));color:rgb(var(--ig-primary-text,0,0,0))}' +
+    '.root.ig .dock .btn:hover{background:rgb(var(--ig-secondary-button-hover,219,219,219))}' +
+    '.root.ig.dark .dock .btn{background:rgb(var(--ig-secondary-button-background,37,41,46));color:rgb(var(--ig-primary-text,245,245,245))}' +
+    '.root.ig.dark .dock .btn:hover{background:rgb(var(--ig-secondary-button-hover,54,54,54))}' +
+    '.root .dock .btn.on,.root.ig .dock .btn.on,.root.ig.dark .dock .btn.on{background:rgba(15,107,255,.14);color:#0F6BFF}' +
+    '.root .dock .dtop,.root .dock .dstat .l,.root .dock .dmsg{color:var(--mut)}.root .dock{color:var(--t1)}';
 
   // ---------------------------------------------------------------- host
   var host = document.createElement('div');
@@ -1166,9 +1181,15 @@ input,select{font:inherit;color:inherit}
     dockHost.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;z-index:2147482000;';
     if (!/\bside\b/.test(dockEl.className)) dockEl.className += ' side';
     var b = v.getBoundingClientRect(), W = 300, gap = 84;
-    var x = (innerWidth - b.right) >= b.left ? b.right + gap : b.left - gap - W;
-    if (x < 8) x = 8; if (x + W > innerWidth - 8) x = innerWidth - 8 - W;
-    dockEl.style.cssText = 'left:' + Math.round(x) + 'px;top:' + Math.round(Math.max(8, b.top)) + 'px;';
+    // Never cover the reel or Instagram's own buttons (up/down arrows at the far left, like/comment column beside the reel).
+    // Order: right side → above the reel → left side (clear of Instagram's columns) → right side, narrower.
+    var H = dockEl.offsetHeight || 180, spR = innerWidth - b.right - 24, x, y = Math.max(8, b.top), w = W;
+    if (spR >= W + 16) x = b.right + Math.min(gap, spR - W);
+    else if (b.top - 64 >= H + 12) { x = b.left + (b.width - W) / 2; y = b.top - H - 12; }
+    else if (b.left - 120 - W >= 96) x = b.left - 120 - W;
+    else { w = Math.max(220, spR); x = innerWidth - 16 - w; }
+    if (x < 8) x = 8; if (x + w > innerWidth - 8) x = innerWidth - 8 - w;
+    dockEl.style.cssText = 'left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px;width:' + Math.round(w) + 'px;';
   }
   function trackDock() {
     if (dockRaf) return;

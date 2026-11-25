@@ -11,7 +11,6 @@
   var BLUE = '#0F6BFF';
   var SKIP_ROOT_ID = 'amine-reels-root';
   var HOST_ID = 'amine-vc-root';
-  var SETTINGS_KEY = 'ar_vc_settings';
   var MIN_W = 160, MIN_H = 200;         // smaller videos are ignored (icons, avatars, grid previews)
   var FLASH_MS = 1600;                  // bar stays visible this long after a shortcut
   var TOAST_MS = 700;
@@ -36,7 +35,6 @@
   };
 
   // ---------- state ----------
-  var settings = { pinned: false };
   var sessionSpeed = 1, userSetSpeed = false;
   try {
     var ss = parseFloat(sessionStorage.getItem('ar_vc_speed'));
@@ -215,12 +213,19 @@
   }
   function setTarget(v) {
     if (v === target) return;
+    var prev = target;
     if (target) targetEvents.forEach(function (t) { target.removeEventListener(t, onTargetEvent); });
     undoRoom();                 // never leave Instagram's reel shrunk after the target changes
     target = v;
     last = {};
     lastCheck = Date.now(); targetSince = Date.now();
-    if (bar) { bar.classList.remove('on'); last.shown = false; }
+    // Feed: from one reel straight to the next. Make the new reel's room now, in the same task that undid the old
+    // one, so the next frame paints the old reel unscaled, the new one scaled and the bar under it: one step, no blink.
+    if (v && prev) { try { ensureRoom(false, true); } catch (e) {} }
+    if (bar) {
+      if (!(v && underMode())) bar.classList.remove('on');
+      last.shown = bar.classList.contains('on');
+    }
     if (v) setTimeout(requestTick, ROOM_DELAY + 50); // Instagram's post window animates in: make room once it settled
     if (v) {
       targetEvents.forEach(function (t) { v.addEventListener(t, onTargetEvent, { passive: true }); });
@@ -349,68 +354,46 @@
         toast(loopOn ? 'تكرار: يعمل' : 'تكرار: متوقف');
       });
     },
-    pin: function (on) {
-      settings.pinned = on == null ? !settings.pinned : !!on;
-      saveSettings();
-      if (target) toast(settings.pinned ? 'الشريط مثبّت' : 'الشريط عند المرور');
-      flash(); requestTick();
-      return true;
-    }
+    // The bar under the reel is always visible now, so "pinned" is the default: kept as a harmless no-op
+    // (old popups / messages may still send it).
+    pin: function () { return true; }
   };
 
-  // ---------- settings ----------
-  function saveSettings() {
-    if (!hasChrome) return;
-    try { chrome.storage.local.set({ ar_vc_settings: { pinned: settings.pinned } }); } catch (e) {}
-  }
-  function loadSettings() {
-    if (!hasChrome) return;
-    try {
-      chrome.storage.local.get(SETTINGS_KEY, function (o) {
-        var s = o && o[SETTINGS_KEY];
-        if (s && typeof s.pinned === 'boolean') { settings.pinned = s.pinned; requestTick(); }
-      });
-      chrome.storage.onChanged.addListener(function (ch, area) {
-        if (area === 'local' && ch[SETTINGS_KEY] && ch[SETTINGS_KEY].newValue) {
-          settings.pinned = !!ch[SETTINGS_KEY].newValue.pinned; last = {}; requestTick();
-        }
-      });
-    } catch (e) {}
-  }
-
   // ---------- UI ----------
+  function IG(name, fallback) { return 'rgb(var(--ig-' + name + ',' + fallback + '))'; }
   var CSS = [
     ':host{all:initial}',
     '*{box-sizing:border-box;margin:0;padding:0;font-family:"AR Thmanyah",system-ui,-apple-system,"Segoe UI",sans-serif}',
-    '.bar{position:fixed;display:none;direction:ltr;pointer-events:auto;background:rgba(20,24,27,.72);border-radius:10px;padding:2px 6px 4px;height:48px;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none;box-shadow:0 8px 24px -8px rgba(20,24,27,.25)}',
+    // Instagram's own theme variables (comma triplets on :root, inherited into the shadow root): light and dark
+    // follow Instagram automatically. The bar has no card of its own: it is the surface it sits on (--ar-surface).
+    '.bar{position:fixed;display:none;direction:ltr;pointer-events:auto;background:var(--ar-surface,' + IG('primary-background', '255,255,255') + ');padding:2px 6px 4px;height:48px;color:' + IG('primary-text', '0,0,0') + ';user-select:none;-webkit-user-select:none;touch-action:none}',
     '.bar.on{display:block}',
     '.scrub{position:relative;height:14px;cursor:pointer}',
-    '.track{position:absolute;left:0;right:0;top:5px;height:4px;border-radius:999px;background:rgba(255,255,255,.28);overflow:hidden}',
-    '.buf{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.35)}',
+    '.track{position:absolute;left:0;right:0;top:5px;height:4px;border-radius:999px;background:' + IG('separator', '219,219,219') + ';overflow:hidden}',
+    '.buf{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(var(--ig-secondary-text,115,115,115),.35)}',
     '.prog{position:absolute;left:0;top:0;bottom:0;width:0;background:' + BLUE + '}',
-    '.knob{position:absolute;top:3px;width:8px;height:8px;margin-left:-4px;border-radius:999px;background:#fff;left:0}',
+    '.knob{position:absolute;top:3px;width:8px;height:8px;margin-left:-4px;border-radius:999px;background:' + BLUE + ';left:0}',
     '.row{display:flex;align-items:center;gap:1px;height:28px;overflow:hidden}',
     '.row>*{flex-shrink:0}',
-    'button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:28px;min-width:28px;padding:0 4px;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;line-height:1;font-weight:500;position:relative}',
-    'button:hover{background:rgba(255,255,255,.14)}',
+    'button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:28px;min-width:28px;padding:0 4px;border-radius:8px;color:' + IG('primary-text', '0,0,0') + ';cursor:pointer;font-size:12px;line-height:1;font-weight:500;position:relative}',
+    'button:hover{background:' + IG('secondary-button-background', '239,239,239') + '}',
     'button.act,button.act:hover{color:#fff;background:' + BLUE + '}',
     'button svg{width:18px;height:18px;display:block}',
     'button.sm svg{width:14px;height:14px}',
     '.n{position:absolute;font-size:8px;font-weight:700;left:0;right:0;top:10px;text-align:center;pointer-events:none}',
-    '.time{font-size:12px;font-weight:500;font-variant-numeric:tabular-nums;padding:0 6px;white-space:nowrap;color:rgba(255,255,255,.92)}',
+    '.time{font-size:12px;font-weight:500;font-variant-numeric:tabular-nums;padding:0 6px;white-space:nowrap;color:' + IG('secondary-text', '115,115,115') + '}',
     '.sp{flex:1 1 auto;min-width:4px}',
     '.spd{min-width:42px;font-variant-numeric:tabular-nums;font-weight:700}',
     '.vol{position:relative;width:64px;height:28px;cursor:pointer;flex:0 0 auto}',
     '.vol .track{top:12px}',
     '.vol .knob{top:10px}',
-    '.sep{width:1px;height:16px;background:rgba(255,255,255,.18);margin:0 3px}',
-    // progressive hiding, chosen by measuring the row (see fitRow): volume slider, loop, pin, time, frame steps
+    '.sep{width:1px;height:16px;background:' + IG('separator', '219,219,219') + ';margin:0 3px}',
+    // progressive hiding, chosen by measuring the row (see fitRow): volume slider, loop, time, frame steps
     '.h1 .vol,.h1 .sep2{display:none}',
     '.h2 .loopb{display:none}',
-    '.h3 .pinb{display:none}',
     '.h4 .time,.h4 .sep1{display:none}',
     '.h5 .fbk,.h5 .ffw{display:none}',
-    '.toast{position:fixed;display:none;direction:rtl;pointer-events:none;background:rgba(20,24,27,.82);color:#fff;border-radius:10px;padding:6px 10px;font-size:13px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}',
+    '.toast{position:fixed;display:none;direction:rtl;pointer-events:none;background:' + IG('primary-text', '0,0,0') + ';color:' + IG('primary-background', '255,255,255') + ';border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}',
     '.toast.on{display:block}'
   ].join('');
 
@@ -470,8 +453,7 @@
       h('span', 'sep sep2'),
       btn('muteb', 'vol', 'كتم / تشغيل الصوت (M)'),
       slider('vol', 'مستوى الصوت (↑ / ↓)'),
-      btn('loopb sm', 'repeat', 'تكرار المقطع'),
-      btn('pinb sm', 'pin', 'تثبيت الشريط ظاهرًا دائمًا (H)')
+      btn('loopb sm', 'repeat', 'تكرار المقطع')
     ]);
     shadow.appendChild(style);
     shadow.appendChild(h('div', 'bar', null, [slider('scrub', 'اسحب للتنقّل في المقطع', true), row]));
@@ -481,7 +463,7 @@
     ui = {
       play: q('.playb'), back: q('.backb'), fwd: q('.fwdb'), fbk: q('.fbk'), ffw: q('.ffw'),
       time: q('.time'), spd: q('.spd'), mute: q('.muteb'), row: q('.row'),
-      loop: q('.loopb'), pin: q('.pinb'),
+      loop: q('.loopb'),
       scrub: q('.scrub'), buf: q('.scrub .buf'), prog: q('.scrub .prog'), knob: q('.scrub .knob'),
       vol: q('.vol'), volProg: q('.vol .prog'), volKnob: q('.vol .knob')
     };
@@ -508,7 +490,6 @@
     ui.spd.addEventListener('wheel', function (e) { e.preventDefault(); e.stopPropagation(); A.speed(e.deltaY < 0 ? 'up' : 'down'); }, { passive: false });
     on(ui.mute, A.mute);
     on(ui.loop, function () { A.loop(); });
-    on(ui.pin, function () { A.pin(); });
 
     dragSlider(ui.scrub, function (ratio) {
       if (!target) return;
@@ -583,17 +564,24 @@
     var left = Math.max(r.left, 0), right = Math.min(r.right, vw);
     var w = Math.max(0, right - left);
     var top = r.bottom + GAP;
-    var limit = room && room.v === target && room.bottom ? Math.min(vh, room.bottom) : vh; // bottom of the reel's column
+    var limit = vh, col = room && room.v === target ? room.col : null;   // bottom of the reel's column, measured live
+    if (col) { var cb = col.getBoundingClientRect(); if (cb.height > 0) limit = Math.min(vh, cb.bottom); }
     if (top + BAR_H > limit - GAP) top = Math.max(r.top, limit - GAP - BAR_H); // no room could be made
     if (top < EDGE) top = EDGE;
     return { left: Math.round(left), top: Math.round(top), width: Math.round(w), height: BAR_H };
   }
+  // The bar has its own strip under the reel (room made, or the reel already leaves it): no hover needed.
+  function underMode() { return !!(target && room && room.v === target && !room.fallback); }
   function shouldShow(r) {
     if (!target || !r) return false;
     if (visibleArea(r) <= 0) return false;
     // the extension's own reel window / separate grid is open: it has its own controls, never show this bar over it
     if (appCovers()) return false;
-    if (settings.pinned || dragging || Date.now() < flashUntil) return true;
+    if (underMode()) return true;      // under the reel: visible for as long as the reel is the target and on screen
+    // fallback (no room could be made, fullscreen): the bar overlaps the video, so it shows on hover only
+    if (dragging) return true;
+    if (!room && Date.now() - targetSince < ROOM_DELAY + 100) return false; // room not decided yet: don't flash it over the video
+    if (Date.now() < flashUntil) return true;
     if (pointer.x < 0) return false;
     var inV = pointer.x >= r.left && pointer.x <= r.right && pointer.y >= r.top && pointer.y <= r.bottom + GAP;
     var b = last.box;
@@ -605,7 +593,7 @@
   // When the reel reaches the bottom of the screen (reels feed, post window), shrink the reel's OWN box with CSS
   // `scale` (origin top centre) just enough to free a strip for the bar under it, inside the video's column.
   // Applied once per target (not on hover); undone when the target changes, the page navigates or our window opens.
-  var room = null; // {v, el, s, prevScale, prevOrigin, painted:[{el,v,p}], bottom} or {v, none:true, bottom}
+  var room = null; // {v, el, s, col, prevScale, prevOrigin, painted:[{el,v,p}]} or {v, none:true, col, fallback?}
   var targetSince = 0, ROOM_DELAY = 350;
   function undoRoom() {
     var r0 = room; room = null;
@@ -656,32 +644,40 @@
   function planRoom(v) {
     // measured on Instagram's own (unscaled) layout
     var vh = window.innerHeight, r = v.getBoundingClientRect();
-    if (r.top < -2 || r.bottom > vh + 40) return null;           // not fully on screen (scrolling a feed): decide later
     var box = reelBox(v), bb = box.getBoundingClientRect();
     var col = columnOf(box), cb = col ? col.getBoundingClientRect() : null;
-    var limit = Math.min(vh, cb ? cb.bottom : vh);
-    if (bb.height < 50) return { none: true, bottom: limit };
-    var g = roomGeometry(bb.top, bb.height, limit);
-    if (!g || g.s === 1) return { none: true, bottom: limit };
-    return { el: box, s: g.s, col: col, bottom: limit };
+    if (bb.height < 50) return { none: true, col: col };
+    var g, onScreen = r.top >= -2 && r.bottom <= vh + 40;
+    if (onScreen) g = roomGeometry(bb.top, bb.height, Math.min(vh, cb ? cb.bottom : vh));
+    // still scrolling into place (reels feed): a column that fits the screen gives the same answer measured inside it
+    else if (cb && cb.height <= vh) g = roomGeometry(bb.top - cb.top, bb.height, cb.height);
+    else return null;                                             // can't tell yet: decide later
+    if (!g) return { none: true, col: col, fallback: true };      // would shrink too much: the bar overlaps (hover only)
+    if (g.s === 1) return { none: true, col: col };               // already leaves the strip under it
+    return { el: box, s: g.s, col: col };
   }
-  function ensureRoom(force) {
+  // now = skip the settle delay (feed: the next reel's layout is already settled)
+  function ensureRoom(force, now) {
     var v = target;
     if (!v || appCovers() || document.fullscreenElement || document.webkitFullscreenElement) { undoRoom(); return; }
     if (room && room.v === v && !force) return;
-    if (!room && Date.now() - targetSince < ROOM_DELAY) return;   // measure a settled layout, once
+    if (!room && !now && Date.now() - targetSince < ROOM_DELAY) return;   // measure a settled layout, once
     var had = room && room.v === v ? room : null;
-    var keep = had && !had.none ? { el: had.el, s: had.s, col: had.col, bottom: had.bottom } : null;
+    var keep = had && !had.none ? { el: had.el, s: had.s, col: had.col } : null;
     undoRoom();                                   // same task: measure the original layout, nothing is painted in between
     var plan = planRoom(v);
-    if (!plan) { if (keep) plan = keep; else return; }            // can't measure now: keep what we had for this target
-    if (plan.none) { room = { v: v, none: true, bottom: plan.bottom }; return; }
+    if (!plan) {                                                  // can't measure now: keep what we had for this target
+      if (had && had.none) { room = had; return; }
+      if (keep) plan = keep; else return;
+    }
+    if (plan.none) { room = { v: v, none: true, col: plan.col, fallback: !!plan.fallback, surface: plan.col ? surroundColour(plan.col) : null }; return; }
     var st = plan.el.style;
-    room = { v: v, el: plan.el, s: plan.s, bottom: plan.bottom, col: plan.col, painted: [],
+    room = { v: v, el: plan.el, s: plan.s, col: plan.col, painted: [],
       prevScale: { v: st.getPropertyValue('scale'), p: st.getPropertyPriority('scale') },
       prevOrigin: { v: st.getPropertyValue('transform-origin'), p: st.getPropertyPriority('transform-origin') } };
     // the freed strip shows the column's own (black) background: paint the column like the window around it
     var colour = plan.col ? surroundColour(plan.col) : null;
+    room.surface = colour;
     if (colour) {
       for (var n = plan.el.parentElement; n; n = n.parentElement) {
         var c = bgOf(n);
@@ -708,7 +704,12 @@
   }
   function hideBar() { if (last.shown) { bar.classList.remove('on'); last.shown = false; } }
   function onNavigate() {
+    var from = lastHref;
     lastHref = location.href;
+    // Reels feed: Instagram rewrites the URL (/reels/<id>/) for every reel while scrolling. Same page: keep the bar
+    // on the current reel; pickTarget() moves it to the next one in one step (no hide in between).
+    var feed = /^https?:\/\/[^/]+\/reels\//;
+    if (feed.test(from) && feed.test(lastHref) && target && target.isConnected) { scheduleScan(0); return; }
     setTarget(null);           // the old reel is gone: hide now, undo any scale, look again shortly
     hideBar();
     scheduleScan(300);
@@ -728,6 +729,11 @@
     if (!show) { hideBar(); return; } // loop stops; restarted by pointer/scroll/key/media events
     if (host.parentNode == null) mount();
     if (!last.shown) { bar.classList.add('on'); last.shown = true; }
+    // In Instagram's post window: the window's own colour. On the page (reels feed, reel page): no background at all,
+    // so the bar sits on Instagram's page exactly like Instagram's own white (light) / black (dark), never a box.
+    var inDlg = !!(target && target.closest && target.closest('[role="dialog"]'));
+    var surf = underMode() ? (inDlg ? (room.surface || '') : 'transparent') : '';
+    if (surf !== last.surf) { if (surf) bar.style.setProperty('--ar-surface', surf); else bar.style.removeProperty('--ar-surface'); last.surf = surf; }
     var b = barBox(r);
     var pb = last.box;
     if (!pb || pb.left !== b.left || pb.top !== b.top || pb.width !== b.width) {
@@ -763,7 +769,6 @@
     var muted = v.muted || v.volume === 0;
     if (muted !== last.muted) { ui.mutePath.setAttribute('d', muted ? P.mute : P.vol); last.muted = muted; }
     if (v.loop !== last.loop) { ui.loop.classList.toggle('act', v.loop); last.loop = v.loop; }
-    if (settings.pinned !== last.pinned) { ui.pin.classList.toggle('act', settings.pinned); last.pinned = settings.pinned; }
   }
 
   // ---------- keyboard ----------
@@ -797,13 +802,12 @@
           if (/(^|\.)youtube\.com$/.test(location.hostname) && location.pathname.indexOf('/shorts') === 0) return;
           fn = kl === 'ArrowUp' ? function () { A.volume('up'); } : function () { A.volume('down'); };
           scrollKey = true; break;
-        case 'h': fn = function () { A.pin(); }; break;
         default:
           if (k && k.length === 1 && k >= '0' && k <= '9') { var n = +k; fn = function () { A.jump(n / 10); }; }
       }
       if (!fn) return;
       if (!need()) return;     // a fresh look: no visible reel → the page keeps its keys (scrolling etc.)
-      if (e.repeat && (kl === ' ' || kl === 'k' || kl === 'm' || kl === 'h')) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+      if (e.repeat && (kl === ' ' || kl === 'k' || kl === 'm')) { e.preventDefault(); e.stopImmediatePropagation(); return; }
       e.preventDefault();
       e.stopImmediatePropagation();
       fn();
@@ -832,7 +836,6 @@
     if (!document.documentElement) return;
     ensureFontFace();
     buildUI();
-    loadSettings();
     window.addEventListener('keydown', function (e) {
       var before = e.defaultPrevented;
       onKey(e);
@@ -868,6 +871,7 @@
       scan();
       checkTarget();                                        // misses add up here too while the bar is hidden (tick idle)
       try { ensureRoom(true); } catch (e) {}   // Instagram's post window animates in: measure again once it settled
+      requestTick();                           // the bar under the reel shows as soon as its room is decided
     }, 1500);
     scan();
   }
@@ -896,7 +900,7 @@
         if (!fn) return;
         if (a !== 'pin' && !need()) return; // another frame (the one with the video) will answer
         var ok = fn(v);
-        try { sendResponse({ ok: !!ok, speed: target ? target.playbackRate : null, pinned: settings.pinned }); } catch (e) {}
+        try { sendResponse({ ok: !!ok, speed: target ? target.playbackRate : null, pinned: true }); } catch (e) {}
       });
     } catch (e) {}
   }

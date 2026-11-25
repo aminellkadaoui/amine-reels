@@ -4,20 +4,43 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Amine Reels — سياسة الخصوصية وشروط الاستخدام</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="icon.png">
 <style>
-body{margin:0;background:#F5F7FA;color:#2A2E36;font:400 16px/1.8 -apple-system,"SF Arabic","Segoe UI",Tahoma,sans-serif}
-main{max-width:760px;margin:40px auto;padding:0 20px}
-h1{color:#0F6BFF;font-size:28px;margin:0 0 4px;font-weight:700}
-h2{font-size:20px;font-weight:600;margin:28px 0 8px}
-.card{background:#fff;border-radius:14px;padding:20px 24px;margin:16px 0;box-shadow:0 6px 16px -4px rgba(15,107,255,.12)}
+:root{--fg:#1A1C1F;--mut:#6E6E6E;--muted:#F4F4F4;--line:#E6E6E6;--blue:#0F6BFF}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--fg);font:400 15px/26px "IBM Plex Sans Arabic",-apple-system,"SF Arabic","Segoe UI",Tahoma,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+header{position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line);background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.hc{max-width:1080px;margin:0 auto;padding:0 32px;height:64px;display:flex;align-items:center;gap:24px}
+.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;direction:ltr}
+.brand img{width:28px;height:28px;border-radius:8px}
+.back{margin-inline-start:auto;height:32px;padding:0 14px;border:1px solid var(--line);border-radius:999px;font-size:14px;line-height:30px}
+.back:hover{background:var(--muted)}
+main{max-width:760px;margin:0 auto;padding:96px 20px}
+.eyebrow{margin:0;font-size:12px;line-height:16px;font-weight:500;color:var(--mut);text-align:center}
+h1{margin:16px 0 0;text-align:center;font-size:30px;line-height:44px;font-weight:600}
+.muted{text-align:center;color:var(--mut);font-size:13px;margin-top:8px}
+.card{border:1px solid var(--line);border-radius:24px;padding:32px;margin-top:40px}
+.card+.card{margin-top:16px}
+h2{font-size:15px;line-height:24px;font-weight:500;margin:0 0 12px}
+ul+h2{margin-top:32px}
+ul{margin:0;padding-inline-start:20px;color:#3A3D42;font-size:14px}
+li+li{margin-top:8px}
 .en{direction:ltr;text-align:left}
-.muted{color:#8A919C;font-size:14px}
-ul{padding-inline-start:22px;margin:6px 0}
+footer{border-top:1px solid var(--line)}
+.fc{max-width:1080px;margin:0 auto;padding:48px 32px;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:14px;line-height:20px;color:var(--mut)}
+.fc nav{display:flex;gap:24px}.fc a:hover{color:var(--fg)}
+@media (max-width:640px){.hc,.fc{padding-inline:20px}main{padding:56px 20px}.card{padding:24px 20px}}
 </style>
 </head>
-<body><main>
-
-<h1>Amine Reels</h1>
+<body>
+<header><div class="hc"><a class="brand" href="index.html"><img src="icon.png" alt="">Amine Reels</a><a class="back" href="index.html">الصفحة الرئيسية</a></div></header>
+<main>
+<p class="eyebrow">Amine Reels</p>
+<h1>الخصوصية وشروط الاستخدام</h1>
 <div class="muted">آخر تحديث: 25 نوفمبر 2026</div>
 
 <div class="card">
@@ -62,5 +85,7 @@ ul{padding-inline-start:22px;margin:6px 0}
 </ul>
 </div>
 
-</main></body>
+</main>
+<footer><div class="fc"><span>غير تابعة لإنستغرام ولا لشركة Meta.</span><nav><a href="https://github.com/aminellkadaoui/amine-reels">GitHub</a><a href="https://github.com/aminellkadaoui/amine-reels/issues">أبلغ عن مشكلة</a></nav></div></footer>
+</body>
 </html>

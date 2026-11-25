@@ -6,111 +6,612 @@
 <title>Amine Reels — اعرف أنجح الريلز في أي حساب</title>
 <meta name="description" content="إضافة مجانية ومفتوحة المصدر لـ Chrome وBrave: رتّب ريلز أي حساب في إنستغرام بنقاط التميّز، وشاهد إحصاءات كل ريل، واحفظه في مجلدات، وتحكّم في تشغيله.">
 <link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<script>document.documentElement.className='js'</script>
 <style>
-:root{--blue:#0F6BFF;--blue2:#0A58D6;--tint:#E8F0FF;--bg:#F5F7FA;--card:#FFFFFF;--line:#E3E8EF;--t1:#1E1E1E;--t2:#2A2E36;--mut:#8A919C}
+:root{
+  --bg:#FFFFFF;--fg:#1A1C1F;--mut:#6E6E6E;--muted:#F4F4F4;--line:#E6E6E6;--side:#F9F9F9;--sel:#ECECEC;
+  --blue:#0F6BFF;--blue2:#0A58D6;--tint:#E8F0FF;
+  --ease:cubic-bezier(.75,0,.25,1);
+  --font:"IBM Plex Sans Arabic",-apple-system,"SF Arabic","Segoe UI",Tahoma,sans-serif;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--t2);font:400 17px/1.8 -apple-system,"SF Arabic","Segoe UI",Tahoma,sans-serif}
-a{color:var(--blue);text-decoration:none}
-.wrap{max-width:980px;margin:0 auto;padding:0 20px}
-header{display:flex;align-items:center;gap:12px;padding:20px 0}
-header img{width:40px;height:40px;border-radius:10px}
-header b{font-size:20px;color:var(--t1)}
-header nav{margin-inline-start:auto;display:flex;gap:20px;font-size:15px}
-.hero{padding:56px 0 40px;text-align:center}
-.hero h1{font-size:44px;line-height:1.3;margin:0 0 12px;color:var(--t1);font-weight:800}
+html{scroll-behavior:auto}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/24px var(--font);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+svg.i{width:16px;height:16px;fill:currentColor;flex:none;display:block}
+.num,.ltr{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+
+/* ---------- header (measured: 64px, sticky, border-b, container 1080 / px 32) */
+section[id]{scroll-margin-top:80px}header .hc{direction:ltr}header nav{direction:rtl}
+header{position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line);background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.hc{max-width:1080px;margin:0 auto;padding:0 32px;height:64px;display:flex;align-items:center;gap:24px}
+.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;direction:ltr}
+.brand img{width:28px;height:28px;border-radius:8px}
+.hc nav{display:flex;align-items:center}
+.hc nav a{padding:6px 12px;border-radius:999px;font-size:14px;line-height:20px;color:var(--mut)}
+.hc nav a:hover{color:var(--fg);background:var(--muted)}
+.hc .end{margin-inline-start:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;border-radius:999px;font-weight:500;font-family:inherit}
+.btn-sm{height:32px;padding:0 14px;font-size:14px;line-height:20px}
+.btn-lg{height:48px;padding:0 26px;font-size:15px}
+.btn-pri{background:var(--blue);color:#fff}
+.btn-pri:hover{background:var(--blue2)}
+.btn-out{border:1px solid var(--line);background:transparent;color:var(--fg)}
+.btn-out:hover{background:var(--muted)}
+
+/* ---------- main column (measured: max 1065, px 20, pb 96) */
+main{max-width:1065px;margin:0 auto;padding:0 20px 96px;overflow-x:hidden}
+.eyebrow{margin:0;font-size:12px;line-height:16px;font-weight:500;color:var(--mut)}
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:96px}
+.hero h1{margin:20px 0 0;font-size:56px;line-height:1.22;font-weight:600;letter-spacing:0}
 .hero h1 span{color:var(--blue)}
-.hero p{font-size:19px;color:var(--mut);margin:0 auto 28px;max-width:640px}
-.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:8px;height:52px;padding:0 24px;border-radius:12px;font-weight:600;font-size:17px;border:1px solid var(--line);background:var(--card);color:var(--t2)}
-.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
-.btn.primary:hover{background:var(--blue2)}
-.btn svg{width:20px;height:20px}
-.note{font-size:14px;color:var(--mut);margin-top:14px}
-h2{font-size:28px;color:var(--t1);margin:56px 0 18px;text-align:center}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
-.card .ic{width:40px;height:40px;border-radius:10px;background:var(--tint);color:var(--blue);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
-.card .ic svg{width:22px;height:22px}
-.card h3{margin:0 0 6px;font-size:18px;color:var(--t1)}
-.card p{margin:0;color:var(--mut);font-size:15px}
-ol.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:12px}
-ol.steps li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px 16px 20px;display:flex;gap:14px;align-items:flex-start}
-ol.steps li::before{content:counter(s);flex:none;width:32px;height:32px;border-radius:999px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
-code,kbd{direction:ltr;unicode-bidi:isolate;background:var(--tint);border-radius:6px;padding:1px 7px;font:600 14px ui-monospace,Menlo,monospace;color:var(--t1)}
-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-td{padding:12px 18px;border-bottom:1px solid var(--line)}
-tr:last-child td{border-bottom:0}
-.privacy{text-align:center;color:var(--mut);font-size:15px;max-width:680px;margin:0 auto}
-footer{margin:64px 0 32px;padding-top:24px;border-top:1px solid var(--line);display:flex;gap:16px;flex-wrap:wrap;justify-content:center;color:var(--mut);font-size:14px}
-.en{direction:ltr;text-align:center;color:var(--mut);font-size:15px;margin-top:6px}
-@media (max-width:600px){.hero h1{font-size:32px}header nav{display:none}}
+.hero .sub{margin:20px 0 0;font-size:16px;line-height:28px;color:var(--mut)}
+.cta{margin-top:36px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.meta{margin-top:24px;display:flex;align-items:center;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;font-size:13px;color:var(--mut)}
+.chip svg.i{width:14px;height:14px}
+.mono{font:400 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;color:var(--mut);direction:ltr}
+
+/* ---------- product frame (measured: max 880, radius 28, p 24, aurora, inner shadow 0 24 56) */
+.shot{margin-top:80px}
+.frame{max-width:880px;margin:0 auto;border:1px solid var(--line);border-radius:28px;padding:20px;background:#F4F6FA;
+  background-image:radial-gradient(58% 72% at 14% 16%,rgba(15,107,255,.28),transparent 68%),radial-gradient(54% 68% at 86% 10%,rgba(120,170,255,.30),transparent 70%),radial-gradient(58% 66% at 80% 90%,rgba(140,200,255,.30),transparent 70%),radial-gradient(62% 70% at 18% 92%,rgba(15,107,255,.16),transparent 70%)}
+.win{background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 24px 56px rgba(17,17,16,.10);overflow:hidden}
+.wbar{height:36px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 12px;direction:ltr;background:var(--side)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:#DADDE2;display:block}
+.url{flex:1;max-width:320px;margin:0 auto;height:22px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:11px;line-height:20px;color:var(--mut);text-align:center;font-family:ui-monospace,Menlo,monospace}
+.wbody{display:grid;grid-template-columns:1fr 244px}
+.pane{padding:16px;min-width:0}
+.ghead{display:flex;align-items:center;gap:10px}
+.av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#BFD6FF,#E8F0FF);flex:none}
+.who b{display:block;font-size:13px;line-height:18px;font-weight:600}
+.who>span{display:block;font-size:11px;line-height:16px;color:var(--mut)}
+.seg{display:inline-flex;gap:2px;padding:2px;border-radius:8px;background:var(--muted)}
+.seg span{height:24px;padding:0 9px;border-radius:6px;font-size:11px;line-height:24px;color:#2A2E36;white-space:nowrap}
+.seg span.on{background:#fff;color:var(--blue);font-weight:500;box-shadow:0 1px 2px rgba(20,24,27,.08)}
+.ghead .seg{margin-inline-start:auto}
+.tb{margin-top:12px;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.tg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mut)}
+.tg svg.i{width:13px;height:13px}
+.grid{margin-top:12px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.th{position:relative;aspect-ratio:9/16;overflow:hidden}
+.th::after{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22%23111111%22%3E%3Cpath%20d%3D%22M232%2C216H183.36A103.95%2C103.95%2C0%2C1%2C0%2C128%2C232H232a8%2C8%2C0%2C0%2C0%2C0-16ZM40%2C128a88%2C88%2C0%2C1%2C1%2C88%2C88A88.1%2C88.1%2C0%2C0%2C1%2C40%2C128Zm88-24a24%2C24%2C0%2C1%2C0-24-24A24%2C24%2C0%2C0%2C0%2C128%2C104Zm0-32a8%2C8%2C0%2C1%2C1-8%2C8A8%2C8%2C0%2C0%2C1%2C128%2C72Zm24%2C104a24%2C24%2C0%2C1%2C0-24%2C24A24%2C24%2C0%2C0%2C0%2C152%2C176Zm-32%2C0a8%2C8%2C0%2C1%2C1%2C8%2C8A8%2C8%2C0%2C0%2C1%2C120%2C176Zm56-24a24%2C24%2C0%2C1%2C0-24-24A24%2C24%2C0%2C0%2C0%2C176%2C152Zm0-32a8%2C8%2C0%2C1%2C1-8%2C8A8%2C8%2C0%2C0%2C1%2C176%2C120ZM80%2C104a24%2C24%2C0%2C1%2C0%2C24%2C24A24%2C24%2C0%2C0%2C0%2C80%2C104Zm0%2C32a8%2C8%2C0%2C1%2C1%2C8-8A8%2C8%2C0%2C0%2C1%2C80%2C136Z%22/%3E%3C/svg%3E") center/contain no-repeat;opacity:.85}
+.badge{position:absolute;top:6px;inset-inline-start:6px;z-index:1;height:20px;padding:0 7px;border-radius:999px;background:rgba(20,24,27,.72);color:#fff;font-size:11px;line-height:20px;font-weight:500}
+.badge.hot{background:var(--blue)}
+.dur{position:absolute;bottom:6px;inset-inline-end:6px;z-index:1;font-size:10px;line-height:16px;padding:0 5px;border-radius:6px;background:rgba(20,24,27,.6);color:#fff}
+.cm{padding:6px 8px 7px}
+.cs{display:flex;gap:8px;font-size:11px;line-height:16px;font-weight:500}
+.cs span{display:inline-flex;align-items:center;gap:3px}
+.cs svg.i{width:12px;height:12px;color:var(--mut)}
+.cd{font-size:10px;line-height:14px;color:var(--mut)}
+.t1,.t3,.t5,.t7,.t9{background:#E9EBEE}.t2,.t4,.t6,.t8,.t10{background:#E1E4E8}
+aside.side{border-inline-start:1px solid var(--line);background:var(--side);padding:16px;display:flex;flex-direction:column;gap:12px}
+.viewer{position:relative;width:212px;margin:0 auto;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:#E1E4E8 !important}
+.viewer::before{content:"";position:absolute;left:50%;top:42%;width:40px;height:40px;margin:-20px 0 0 -20px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%20fill%3D%22%23111111%22%3E%3Cpath%20d%3D%22M232%2C216H183.36A103.95%2C103.95%2C0%2C1%2C0%2C128%2C232H232a8%2C8%2C0%2C0%2C0%2C0-16ZM40%2C128a88%2C88%2C0%2C1%2C1%2C88%2C88A88.1%2C88.1%2C0%2C0%2C1%2C40%2C128Zm88-24a24%2C24%2C0%2C1%2C0-24-24A24%2C24%2C0%2C0%2C0%2C128%2C104Zm0-32a8%2C8%2C0%2C1%2C1-8%2C8A8%2C8%2C0%2C0%2C1%2C128%2C72Zm24%2C104a24%2C24%2C0%2C1%2C0-24%2C24A24%2C24%2C0%2C0%2C0%2C152%2C176Zm-32%2C0a8%2C8%2C0%2C1%2C1%2C8%2C8A8%2C8%2C0%2C0%2C1%2C120%2C176Zm56-24a24%2C24%2C0%2C1%2C0-24-24A24%2C24%2C0%2C0%2C0%2C176%2C152Zm0-32a8%2C8%2C0%2C1%2C1-8%2C8A8%2C8%2C0%2C0%2C1%2C176%2C120ZM80%2C104a24%2C24%2C0%2C1%2C0%2C24%2C24A24%2C24%2C0%2C0%2C0%2C80%2C104Zm0%2C32a8%2C8%2C0%2C1%2C1%2C8-8A8%2C8%2C0%2C0%2C1%2C80%2C136Z%22/%3E%3C/svg%3E") center/contain no-repeat;opacity:.85}
+.bar{position:absolute;left:6px;right:6px;bottom:6px;direction:ltr;background:rgba(20,24,27,.72);border-radius:10px;padding:2px 4px 3px;color:#fff}
+.scrub{position:relative;height:10px}
+.scrub .tr{position:absolute;left:2px;right:2px;top:4px;height:3px;border-radius:999px;background:rgba(255,255,255,.28)}
+.scrub .pg{position:absolute;left:2px;top:4px;height:3px;width:37%;border-radius:999px;background:var(--blue)}
+.scrub .kn{position:absolute;left:37%;top:2px;width:7px;height:7px;border-radius:50%;background:#fff}
+.brow{display:flex;align-items:center;gap:1px;height:20px}
+.brow b{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:20px;position:relative;font-weight:500}
+.brow svg.i{width:12px;height:12px}
+.brow b small{position:absolute;font-size:6px;font-weight:600;top:6px;left:0;right:0;text-align:center}
+.brow .tm{font-size:9px;padding:0 2px;color:rgba(255,255,255,.92);white-space:nowrap}
+.brow .sp{flex:1}
+.brow .vl{width:20px;height:3px;border-radius:999px;background:rgba(255,255,255,.28);position:relative}
+.brow .vl::before{content:"";position:absolute;inset:0 30% 0 0;border-radius:999px;background:#fff}
+.brow .x{font-size:9px}
+.stats{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.dtop{display:flex;align-items:center;justify-content:space-between;font-size:11px;line-height:16px;color:var(--mut);padding-bottom:6px;border-bottom:1px solid var(--line)}
+.dtop .bn{display:inline-flex;align-items:center;gap:5px;color:var(--fg);font-weight:600;direction:ltr}
+.dtop .bn svg.i{color:var(--blue);width:13px;height:13px}
+.rw{display:flex;justify-content:space-between;align-items:center;font-size:12px;line-height:26px}
+.rw .k{display:inline-flex;align-items:center;gap:6px;color:var(--mut)}
+.rw .k svg.i{width:13px;height:13px}
+.rw .v{font-weight:500}
+.rw .v.hot{color:var(--blue)}
+.rw .v small{color:var(--mut);font-weight:400;margin-inline-start:4px}
+.acts{margin-top:6px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.acts span{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:8px;background:var(--muted);font-size:10px;line-height:14px}
+.acts svg.i{width:14px;height:14px}
+
+/* ---------- features (measured: border-t, pt 48, 3 cols, dividers, icon 36 round muted, h 15/500, p 13/24) */
+.feats{margin-top:96px;border-top:1px solid var(--line);padding-top:48px;display:grid;grid-template-columns:repeat(3,1fr);row-gap:48px}
+.feat{display:flex;flex-direction:column;gap:12px;padding:0 28px;border-inline-start:1px solid var(--line)}
+.feat:nth-child(3n+1){padding-inline-start:0;border-inline-start:0}
+.feat:nth-child(3n){padding-inline-end:0}
+.feat .ic{width:36px;height:36px;border-radius:50%;background:var(--muted);display:flex;align-items:center;justify-content:center}
+.feat h3{margin:0;font-size:15px;line-height:24px;font-weight:500}
+.feat p{margin:0;font-size:13px;line-height:24px;color:var(--mut)}
+
+/* ---------- section heads (measured: gap 16, h2 30/600, mb 40) */
+.sec{margin-top:112px}
+.sh{display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:40px;text-align:center}
+.sh h2{margin:0;font-size:30px;line-height:44px;font-weight:600}
+
+/* ---------- install motion */
+.frame-install{max-width:640px}
+#install .sh{margin-bottom:24px}
+.stagebox{position:relative;width:100%;aspect-ratio:760/440;border-radius:8px;overflow:hidden;background:#fff;border:1px solid var(--line);box-shadow:0 24px 56px rgba(17,17,16,.10)}
+.stage{position:absolute;left:0;top:0;width:760px;height:440px;transform-origin:0 0;direction:ltr;font-family:var(--font);color:var(--fg);overflow:hidden;background:#fff}
+.stage *{transition-timing-function:var(--ease)}
+.scene{position:absolute;inset:0;visibility:hidden}
+.stage[data-s="1"] .s1,.stage[data-s="2"] .s2,.stage[data-s="5"] .s5{visibility:visible}
+/* scene 1: download */
+.s1{background:var(--side)}
+.s1 .pg1{position:absolute;left:150px;top:48px;width:460px;height:250px;border:1px solid var(--line);border-radius:12px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;direction:rtl}
+.s1 .pg1 .lg{display:flex;align-items:center;gap:8px;font-weight:600;font-size:16px;direction:ltr}
+.s1 .pg1 .lg img{width:26px;height:26px;border-radius:7px}
+.s1 .pg1 .h{font-size:22px;line-height:32px;font-weight:600}
+.s1 .pg1 .h span{color:var(--blue)}
+.dlb{transition:transform .2s}
+.press{transform:scale(.94)}
+.shelf{position:absolute;left:0;right:0;bottom:0;height:96px;border-top:1px solid var(--line);background:#fff;display:flex;align-items:center;gap:16px;padding:0 32px}
+.file{display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:13px;transform:translateY(130px);transition:transform 1s}
+.file.in{transform:none}
+.file .fi{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--muted)}
+.file .fi.bl{background:var(--tint);color:var(--blue)}
+.file small{display:block;font-size:11px;color:var(--mut);line-height:14px}
+.arrowx{color:var(--mut);transform:translateY(130px);transition:transform 1s}
+.arrowx.in{transform:none}
+/* browser */
+.s2,.s5{background:#fff}
+.chrome{height:76px;background:var(--side);border-bottom:1px solid var(--line)}
+.tabs{height:36px;display:flex;align-items:flex-end;gap:8px;padding:0 12px}
+.tabs .dots{align-self:center;margin-inline-end:8px}
+.tab{height:28px;padding:0 14px;border-radius:8px 8px 0 0;background:#fff;border:1px solid var(--line);border-bottom:0;font-size:12px;line-height:28px;min-width:150px}
+.addr{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;background:#fff;border-top:1px solid var(--line)}
+.addr .nv{display:flex;gap:8px;color:#B5BAC2}
+.addr .ab{flex:1;height:26px;border-radius:999px;background:var(--muted);font:12px/26px ui-monospace,Menlo,monospace;padding:0 14px;color:var(--fg)}
+.addr .ab i{display:inline-block;width:1px;height:13px;background:var(--fg);vertical-align:-2px;margin-left:1px}
+.xh{display:flex;align-items:center;height:56px;padding:0 24px;border-bottom:1px solid var(--line);gap:16px}
+.xh b{font-size:17px;font-weight:600}
+.xh .srch{width:260px;height:30px;border-radius:999px;background:var(--muted);margin:0 auto}
+.dev{display:flex;align-items:center;gap:10px;font-size:13px}
+.tgl{width:34px;height:20px;border-radius:999px;background:#C9CDD3;position:relative;transition:background .4s}
+.tgl::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .4s var(--ease)}
+.tgl.on{background:var(--blue)}.tgl.on::after{transform:translateX(14px)}
+.devbar{height:0;overflow:hidden;display:flex;align-items:center;gap:8px;padding:0 24px;border-bottom:1px solid transparent;transition:height .6s}
+.devbar.in{height:48px;border-bottom-color:var(--line)}
+.ob{height:30px;padding:0 14px;border:1px solid var(--line);border-radius:999px;font-size:12px;line-height:28px;background:#fff;transition:transform .2s}
+.xg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:20px 24px}
+.xc{height:104px;border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.xc .r1{display:flex;gap:10px;align-items:center}
+.xc .ico{width:30px;height:30px;border-radius:8px;background:var(--muted)}
+.xc .ln{height:8px;border-radius:4px;background:var(--muted)}
+.xc .ft{margin-top:auto;display:flex;justify-content:flex-end}
+.xc .ft .tgl{transform:scale(.8)}
+.xc.ar{display:none;border-color:#BCD3FF}
+.xc.ar.in{display:flex;animation:none}
+.xc.ar img{width:30px;height:30px;border-radius:8px}
+.xc.ar b{font-size:13px;line-height:16px;display:block}
+.xc.ar small{font-size:11px;color:var(--mut)}
+.xc.ar p{margin:0;font-size:11px;line-height:16px;color:var(--mut);direction:rtl;text-align:right}
+/* picker dialog */
+.dlg{position:absolute;left:190px;top:96px;width:380px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 24px 56px rgba(17,17,16,.14);transform:translateY(480px);transition:transform .8s}
+.dlg.in{transform:none}
+.dlg .dt{font-size:13px;font-weight:600;padding:12px 16px;border-bottom:1px solid var(--line)}
+.dlg .fr{display:flex;align-items:center;gap:10px;height:36px;padding:0 16px;font-size:13px}
+.dlg .fr svg.i{color:#8A919C}
+.dlg .fr.sel{background:var(--tint);color:var(--blue)}.dlg .fr.sel svg.i{color:var(--blue)}
+.dlg .df{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.dlg .df span{height:30px;padding:0 16px;border-radius:999px;font-size:12px;line-height:30px;border:1px solid var(--line);transition:transform .2s}
+.dlg .df .go{background:var(--blue);border-color:var(--blue);color:#fff}
+/* scene 5: instagram-like page */
+.ig{display:grid;grid-template-columns:150px 1fr;height:364px;direction:rtl}
+.ig .nav{border-inline-end:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:14px}
+.ig .nav i{display:block;height:10px;border-radius:5px;background:#E9ECF0}
+.ig .pf{padding:18px 26px;direction:rtl;min-width:0}
+.ig .ph{display:flex;align-items:center;gap:18px}
+.ig .ph .av{width:48px;height:48px}
+.ig .ph .ls{display:flex;flex-direction:column;gap:8px}
+.ig .ph .ls i{display:block;height:10px;border-radius:5px;background:#E9ECF0}
+.ig .itabs{margin-top:16px;border-top:1px solid var(--line);display:flex;justify-content:center;gap:28px;font-size:12px;color:var(--mut)}
+.ig .itabs span{padding:9px 2px;border-top:2px solid transparent;margin-top:-1px;display:inline-flex;gap:5px;align-items:center}
+.ig .itabs .rt{color:var(--blue);font-weight:500;transition:transform .2s}
+.ig .itabs .rt.on{border-top-color:var(--blue)}
+.ig .ggrid{margin-top:12px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;transform:translateY(300px);transition:transform 1s}
+.ig .ggrid.in{transform:none}
+.ig .ggrid .th{aspect-ratio:4/5;border-radius:8px}
+.ig .ggrid .th::after{display:none}
+.ig .ggrid .cs{margin-top:4px;font-size:10px}
+.cur{position:absolute;left:0;top:0;width:22px;height:22px;z-index:9;transition:transform 1s var(--ease);pointer-events:none}
+.cur svg{width:22px;height:22px;display:block;filter:drop-shadow(0 2px 3px rgba(20,24,27,.25))}
+.cur.dn svg{transform:scale(.85);transition:transform .15s}
+.steps{margin-top:24px;display:flex;align-items:center;justify-content:center;gap:16px}
+.dotsn{display:flex;gap:8px}
+.dotsn span,.dotsn button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);font:inherit;font-size:12px;line-height:26px;text-align:center;color:var(--mut);background:#fff;padding:0;cursor:pointer}
+.dotsn button:hover{border-color:var(--blue);color:var(--blue)}
+.mctl{display:flex;gap:6px}.mctl[hidden]{display:none}
+.mctl button{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--t1,#111);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.mctl button:hover{border-color:var(--blue);color:var(--blue)}.mctl svg{width:14px;height:14px}
+.dotsn span.on,.dotsn button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.cap{min-width:160px;font-size:15px;font-weight:500}
+.static{display:none;grid-template-columns:repeat(5,1fr);gap:16px;margin:0;padding:0;list-style:none}
+.static li{border:1px solid var(--line);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.static .n{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;line-height:28px;text-align:center}
+.static b{font-size:15px;line-height:24px;font-weight:500}
+.static span{font-size:13px;line-height:24px;color:var(--mut)}
+html:not(.js) .motion{display:none}html:not(.js) .static{display:grid}
+@media (prefers-reduced-motion:reduce){.motion{display:none}.static{display:grid}}
+.upd{margin:24px 0 0;text-align:center;font-size:13px;line-height:24px;color:var(--mut)}
+code,kbd{direction:ltr;unicode-bidi:isolate;font:500 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+code{background:var(--muted);border-radius:6px;padding:3px 6px}
+
+/* ---------- shortcuts (measured testimonial cards: radius 24, border, p 20, gap 16) */
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.key{border:1px solid var(--line);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.key .ks{display:flex;flex-wrap:wrap;gap:6px;align-items:center;direction:ltr;justify-content:flex-end}
+.key .ks em{font-style:normal;font-size:12px;color:var(--mut);padding:0 2px}
+kbd{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 8px;border:1px solid var(--line);border-bottom-width:2px;border-radius:8px;background:#fff;color:var(--fg)}
+.key p{margin:0;font-size:14px;line-height:24px}
+.key:last-child{grid-column:1/-1;flex-direction:row-reverse;justify-content:space-between;align-items:center}
+.key p small{display:block;font-size:13px;color:var(--mut)}
+
+/* ---------- closing CTA (measured: radius 28, border, py 96, h2 36/600, gap 28) */
+.closing{border:1px solid var(--line);border-radius:28px;background:linear-gradient(#F7F8FA 0%,#fff 62%);padding:96px 48px;display:flex;flex-direction:column;align-items:center;gap:28px;text-align:center}
+.closing h2{margin:0;font-size:36px;line-height:1.3;font-weight:600}
+.closing p{margin:0;max-width:560px;font-size:13px;line-height:24px;color:var(--mut)}
+.closing p a{color:var(--blue)}
+
+/* ---------- footer (measured: border-t, container 1080, py 48, brand col + link cols, round 36 icon btns) */
+footer{margin-top:0;border-top:1px solid var(--line)}
+.fc{max-width:1080px;margin:0 auto;padding:48px 32px;display:flex;justify-content:space-between;gap:40px}
+.fb{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.fb .brand{font-size:15px}.fb .brand img{width:24px;height:24px;border-radius:6px}
+.fb p{margin:0;font-size:14px;line-height:20px;color:var(--mut)}
+.rb{display:inline-flex;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);align-items:center;justify-content:center;color:var(--mut)}
+.rb:hover{color:var(--fg)}
+.fb .cp{font-size:12px;line-height:16px;color:var(--mut)}
+.fn{display:flex;gap:64px}
+.fn div{display:flex;flex-direction:column;gap:12px}
+.fn a{font-size:14px;line-height:20px;color:var(--mut)}
+.fn a:hover{color:var(--fg)}
+
+/* ---------- responsive */
+@media (max-width:860px){
+  .wbody{grid-template-columns:1fr}
+  aside.side{border-inline-start:0;border-top:1px solid var(--line);display:grid;grid-template-columns:200px 1fr;align-items:start}
+  .viewer{width:200px}
+}
+@media (max-width:640px){
+  .hc{padding:0 20px}.hc nav{display:none}
+  .hero{padding-top:56px}
+  .hero h1{font-size:27px;line-height:1.4}
+  .cta{flex-direction:column;align-items:center}
+  .shot{margin-top:56px}
+  .frame{padding:8px;border-radius:20px}
+  .wbar .url{max-width:200px}
+  .pane{padding:12px}
+  .ghead .seg,.tg.f2{display:none}
+  .grid{grid-template-columns:repeat(3,1fr)}
+  .grid .card:nth-child(n+4){display:none}
+  aside.side{grid-template-columns:1fr;padding:12px}
+  .viewer{width:220px}
+  .grid .cs span+span{display:none}
+  .feats{margin-top:64px;grid-template-columns:1fr;row-gap:0;padding-top:16px}
+  .feat,.feat:nth-child(3n+1),.feat:nth-child(3n){padding:32px 0;border-inline-start:0;border-bottom:1px solid var(--line)}
+  .feat:last-child{border-bottom:0;padding-bottom:0}
+  .sec{margin-top:80px}
+  .sh h2{font-size:26px;line-height:38px}
+  .stagebox{border-radius:8px}
+  .steps{flex-direction:column;gap:12px}
+  .static{grid-template-columns:1fr}
+  .keys{grid-template-columns:1fr}
+  .closing{padding:64px 24px;border-radius:24px}
+  .closing h2{font-size:26px}
+  .fc{flex-direction:column;padding:48px 20px}
+  .fn{gap:40px}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-eye" viewBox="0 0 256 256"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></symbol>
+<symbol id="i-heart" viewBox="0 0 256 256"><path d="M178,40c-20.65,0-38.73,8.88-50,23.89C116.73,48.88,98.65,40,78,40a62.07,62.07,0,0,0-62,62c0,70,103.79,126.66,108.21,129a8,8,0,0,0,7.58,0C136.21,228.66,240,172,240,102A62.07,62.07,0,0,0,178,40ZM128,214.8C109.74,204.16,32,155.69,32,102A46.06,46.06,0,0,1,78,56c19.45,0,35.78,10.36,42.6,27a8,8,0,0,0,14.8,0c6.82-16.67,23.15-27,42.6-27a46.06,46.06,0,0,1,46,46C224,155.61,146.24,204.15,128,214.8Z"/></symbol>
+<symbol id="i-chat-circle" viewBox="0 0 256 256"><path d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"/></symbol>
+<symbol id="i-lightning" viewBox="0 0 256 256"><path d="M215.79,118.17a8,8,0,0,0-5-5.66L153.18,90.9l14.66-73.33a8,8,0,0,0-13.69-7l-112,120a8,8,0,0,0,3,13l57.63,21.61L88.16,238.43a8,8,0,0,0,13.69,7l112-120A8,8,0,0,0,215.79,118.17ZM109.37,214l10.47-52.38a8,8,0,0,0-5-9.06L62,132.71l84.62-90.66L136.16,94.43a8,8,0,0,0,5,9.06l52.8,19.8Z"/></symbol>
+<symbol id="i-calendar-blank" viewBox="0 0 256 256"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"/></symbol>
+<symbol id="i-bookmark-simple" viewBox="0 0 256 256"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.57V48H184Z"/></symbol>
+<symbol id="i-bookmark-simple-fill" viewBox="0 0 256 256"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Z"/></symbol>
+<symbol id="i-folder-simple" viewBox="0 0 256 256"><path d="M216,72H130.67L102.93,51.2a16.12,16.12,0,0,0-9.6-3.2H40A16,16,0,0,0,24,64V200a16,16,0,0,0,16,16H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72Zm0,128H40V64H93.33L123.2,86.4A8,8,0,0,0,128,88h88Z"/></symbol>
+<symbol id="i-waveform" viewBox="0 0 256 256"><path d="M56,96v64a8,8,0,0,1-16,0V96a8,8,0,0,1,16,0ZM88,24a8,8,0,0,0-8,8V224a8,8,0,0,0,16,0V32A8,8,0,0,0,88,24Zm40,32a8,8,0,0,0-8,8V192a8,8,0,0,0,16,0V64A8,8,0,0,0,128,56Zm40,32a8,8,0,0,0-8,8v64a8,8,0,0,0,16,0V96A8,8,0,0,0,168,88Zm40-16a8,8,0,0,0-8,8v96a8,8,0,0,0,16,0V80A8,8,0,0,0,208,72Z"/></symbol>
+<symbol id="i-download-simple" viewBox="0 0 256 256"><path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"/></symbol>
+<symbol id="i-play-fill" viewBox="0 0 256 256"><path d="M240,128a15.74,15.74,0,0,1-7.6,13.51L88.32,229.65a16,16,0,0,1-16.2.3A15.86,15.86,0,0,1,64,216.13V39.87a15.86,15.86,0,0,1,8.12-13.82,16,16,0,0,1,16.2.3L232.4,114.49A15.74,15.74,0,0,1,240,128Z"/></symbol>
+<symbol id="i-arrow-counter-clockwise" viewBox="0 0 256 256"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z"/></symbol>
+<symbol id="i-arrow-clockwise" viewBox="0 0 256 256"><path d="M240,56v48a8,8,0,0,1-8,8H184a8,8,0,0,1,0-16H211.4L184.81,71.64l-.25-.24a80,80,0,1,0-1.67,114.78,8,8,0,0,1,11,11.63A95.44,95.44,0,0,1,128,224h-1.32A96,96,0,1,1,195.75,60L224,85.8V56a8,8,0,1,1,16,0Z"/></symbol>
+<symbol id="i-caret-left" viewBox="0 0 256 256"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/></symbol>
+<symbol id="i-caret-right" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></symbol>
+<symbol id="i-speaker-high" viewBox="0 0 256 256"><path d="M155.51,24.81a8,8,0,0,0-8.42.88L77.25,80H32A16,16,0,0,0,16,96v64a16,16,0,0,0,16,16H77.25l69.84,54.31A8,8,0,0,0,160,224V32A8,8,0,0,0,155.51,24.81ZM32,96H72v64H32ZM144,207.64,88,164.09V91.91l56-43.55Zm54-106.08a40,40,0,0,1,0,52.88,8,8,0,0,1-12-10.58,24,24,0,0,0,0-31.72,8,8,0,0,1,12-10.58ZM248,128a79.9,79.9,0,0,1-20.37,53.34,8,8,0,0,1-11.92-10.67,64,64,0,0,0,0-85.33,8,8,0,1,1,11.92-10.67A79.83,79.83,0,0,1,248,128Z"/></symbol>
+<symbol id="i-sort-ascending" viewBox="0 0 256 256"><path d="M128,128a8,8,0,0,1-8,8H48a8,8,0,0,1,0-16h72A8,8,0,0,1,128,128ZM48,72H184a8,8,0,0,0,0-16H48a8,8,0,0,0,0,16Zm56,112H48a8,8,0,0,0,0,16h56a8,8,0,0,0,0-16Zm125.66-21.66a8,8,0,0,0-11.32,0L192,188.69V112a8,8,0,0,0-16,0v76.69l-26.34-26.35a8,8,0,0,0-11.32,11.32l40,40a8,8,0,0,0,11.32,0l40-40A8,8,0,0,0,229.66,162.34Z"/></symbol>
+<symbol id="i-funnel" viewBox="0 0 256 256"><path d="M230.6,49.53A15.81,15.81,0,0,0,216,40H40A16,16,0,0,0,28.19,66.76l.08.09L96,139.17V216a16,16,0,0,0,24.87,13.32l32-21.34A16,16,0,0,0,160,194.66V139.17l67.74-72.32.08-.09A15.8,15.8,0,0,0,230.6,49.53ZM40,56h0Zm106.18,74.58A8,8,0,0,0,144,136v58.66L112,216V136a8,8,0,0,0-2.16-5.47L40,56H216Z"/></symbol>
+<symbol id="i-squares-four" viewBox="0 0 256 256"><path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z"/></symbol>
+<symbol id="i-chart-line-up" viewBox="0 0 256 256"><path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V48a8,8,0,0,1,16,0V156.69l50.34-50.35a8,8,0,0,1,11.32,0L128,132.69,180.69,80H160a8,8,0,0,1,0-16h40a8,8,0,0,1,8,8v40a8,8,0,0,1-16,0V91.31l-58.34,58.35a8,8,0,0,1-11.32,0L96,123.31l-56,56V200H224A8,8,0,0,1,232,208Z"/></symbol>
+<symbol id="i-keyboard" viewBox="0 0 256 256"><path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,144H32V64H224V192Zm-16-64a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16H200A8,8,0,0,1,208,128Zm0-32a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16H200A8,8,0,0,1,208,96ZM72,160a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16h8A8,8,0,0,1,72,160Zm96,0a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,160Zm40,0a8,8,0,0,1-8,8h-8a8,8,0,0,1,0-16h8A8,8,0,0,1,208,160Z"/></symbol>
+<symbol id="i-instagram-logo" viewBox="0 0 256 256"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z"/></symbol>
+<symbol id="i-magnifying-glass" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></symbol>
+<symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+<symbol id="i-film-reel" viewBox="0 0 256 256"><path d="M232,216H183.36A103.95,103.95,0,1,0,128,232H232a8,8,0,0,0,0-16ZM40,128a88,88,0,1,1,88,88A88.1,88.1,0,0,1,40,128Zm88-24a24,24,0,1,0-24-24A24,24,0,0,0,128,104Zm0-32a8,8,0,1,1-8,8A8,8,0,0,1,128,72Zm24,104a24,24,0,1,0-24,24A24,24,0,0,0,152,176Zm-32,0a8,8,0,1,1,8,8A8,8,0,0,1,120,176Zm56-24a24,24,0,1,0-24-24A24,24,0,0,0,176,152Zm0-32a8,8,0,1,1-8,8A8,8,0,0,1,176,120ZM80,104a24,24,0,1,0,24,24A24,24,0,0,0,80,104Zm0,32a8,8,0,1,1,8-8A8,8,0,0,1,80,136Z"/></symbol>
+<symbol id="i-x" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"/></symbol>
+<symbol id="i-github-logo" viewBox="0 0 256 256"><path d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.44-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68ZM200,112a40,40,0,0,1-40,40H112a40,40,0,0,1-40-40v-8a41.74,41.74,0,0,1,6.9-22.48A8,8,0,0,0,80,73.83a43.81,43.81,0,0,1,.79-33.58,43.88,43.88,0,0,1,32.32,20.06A8,8,0,0,0,119.82,64h32.35a8,8,0,0,0,6.74-3.69,43.87,43.87,0,0,1,32.32-20.06A43.81,43.81,0,0,1,192,73.83a8.09,8.09,0,0,0,1,7.65A41.72,41.72,0,0,1,200,104Z"/></symbol>
+<symbol id="i-moon" viewBox="0 0 256 256"><path d="M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z"/></symbol>
+
+</defs></svg>
+
 <header>
-  <img src="icon.png" alt="">
-  <b>Amine Reels</b>
-  <nav><a href="#features">الميزات</a><a href="#install">التثبيت</a><a href="#keys">الاختصارات</a><a href="https://github.com/aminellkadaoui/amine-reels">GitHub</a></nav>
+  <div class="hc">
+    <a class="brand" href="#"><img src="icon.png" alt="">Amine Reels</a>
+    <nav><a href="#features">الميزات</a><a href="#install">طريقة التثبيت</a><a href="#keys">الاختصارات</a></nav>
+    <a class="end btn btn-sm btn-pri" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Amine-Reels.zip">تنزيل</a>
+  </div>
 </header>
 
-<section class="hero">
-  <h1>اعرف <span>أنجح الريلز</span><br>في أي حساب على إنستغرام</h1>
-  <p>إضافة مجانية ومفتوحة المصدر لـ Chrome وBrave. ترتّب ريلز الحساب بنقاط التميّز، وتعرض إحصاءات كل ريل داخل إنستغرام، وتحفظه لك في مجلدات، وتعطيك تحكمًا كاملًا في الفيديو.</p>
-  <div class="btns">
-    <a class="btn primary" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Amine-Reels.zip">
-      <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"/></svg>
-      تنزيل الإضافة
-    </a>
-    <a class="btn" href="https://github.com/aminellkadaoui/amine-reels">
-      <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.44-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68ZM200,112a40,40,0,0,1-40,40H112a40,40,0,0,1-40-40v-8a41.74,41.74,0,0,1,6.9-22.48A8,8,0,0,0,80,73.83a43.81,43.81,0,0,1,.79-33.58,43.88,43.88,0,0,1,32.32,20.06A8,8,0,0,0,119.82,64h32.35a8,8,0,0,0,6.74-3.69,43.87,43.87,0,0,1,32.32-20.06A43.81,43.81,0,0,1,192,73.83a8.09,8.09,0,0,0,1,7.65A41.72,41.72,0,0,1,200,104Z"/></svg>
-      الكود على GitHub
-    </a>
-  </div>
-  <div class="note">مجانية بالكامل · بلا حساب · بلا خادم · تعمل بحسابك في متصفحك</div>
-  <div class="en">Free, open-source Chrome &amp; Brave extension to find the best-performing Instagram reels.</div>
-</section>
+<main>
+  <section class="hero">
+    <p class="eyebrow">إضافة مجانية لمتصفح Chrome وBrave</p>
+    <h1>اعرف <span>أنجح الريلز</span><br>في أي حساب على إنستغرام</h1>
+    <p class="sub">مفتوحة المصدر، وتعمل داخل متصفحك.</p>
+    <div class="cta">
+      <a class="btn btn-lg btn-pri" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Amine-Reels.zip"><svg class="i"><use href="#i-download-simple"/></svg>تنزيل الإضافة</a>
+      <a class="btn btn-lg btn-out" href="https://github.com/aminellkadaoui/amine-reels"><svg class="i"><use href="#i-github-logo"/></svg>الكود على GitHub</a>
+    </div>
+    <div class="meta"><span class="mono">CHROME · BRAVE · MIT</span></div>
+  </section>
 
-<h2 id="features">ماذا تفعل؟</h2>
-<div class="grid">
-  <div class="card"><div class="ic"><svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V48a8,8,0,0,1,16,0V156.69l50.34-50.35a8,8,0,0,1,11.32,0L128,132.69,180.69,80H160a8,8,0,0,1,0-16h40a8,8,0,0,1,8,8v40a8,8,0,0,1-16,0V91.31l-58.34,58.35a8,8,0,0,1-11.32,0L96,123.31l-56,56V200H224A8,8,0,0,1,232,208Z"/></svg></div><h3>ترتيب بنقاط التميّز</h3><p>مشاهدات الريل ÷ وسيط مشاهدات الحساب. ترى ما نجح فعلًا، لا ما هو الأحدث فقط.</p></div>
-  <div class="card"><div class="ic"><svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg></div><h3>إحصاءات داخل إنستغرام</h3><p>المشاهدات، الإعجابات، التعليقات، نقاط التميّز وتاريخ النشر، في واجهة إنستغرام نفسها.</p></div>
-  <div class="card"><div class="ic"><svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z"/></svg></div><h3>تحليل عدة حسابات</h3><p>أضف 10 حسابات مثلًا، وشاهد ريلزها كلها في شبكة واحدة مرتبة بالأعلى أداءً، مع فلتر بالتاريخ.</p></div>
-  <div class="card"><div class="ic"><svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M216,72H130.67L102.93,51.2a16.12,16.12,0,0,0-9.6-3.2H40A16,16,0,0,0,24,64V200a16,16,0,0,0,16,16H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72Zm0,128H40V64H93.33L123.2,86.4A8,8,0,0,0,128,88h88Z"/></svg></div><h3>مكتبة ومجلدات</h3><p>احفظ الريلز التي تلهمك في مجلدات، ونزّل المجلد كله بالملف الأصلي، وصدّره CSV أو JSON.</p></div>
-  <div class="card"><div class="ic"><svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg></div><h3>تحكّم كامل في الفيديو</h3><p>تشغيل وإيقاف، 5 ثوانٍ (10 مع Shift)، فريم بفريم، السرعة، الصوت وشريط التنقل، تحت الريل مباشرة.</p></div>
-  <div class="card"><div class="ic"><svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z"/></svg></div><h3>داكن وفاتح</h3><p>بألوان إنستغرام نفسها، تلقائيًا أو كما تختار. وتظهر داخل واجهة إنستغرام أو في نافذة منفصلة.</p></div>
-</div>
+  <section class="shot" aria-label="شكل الإضافة داخل إنستغرام">
+    <div class="frame">
+      <div class="win" aria-hidden="true">
+        <div class="wbar"><div class="dots"><i></i><i></i><i></i></div><div class="url">instagram.com/account/</div></div>
+        <div class="wbody">
+          <div class="pane">
+            <div class="ghead">
+              <div class="av"></div>
+              <div class="who"><b>ريلز مرتبة</b><span><span class="ltr">@account</span> · <span class="num">120</span> ريل</span></div>
+              <div class="seg"><span class="on">داخل إنستغرام</span><span>نافذة منفصلة</span></div>
+            </div>
+            <div class="tb">
+              <div class="tg"><svg class="i"><use href="#i-sort-ascending"/></svg>الترتيب <div class="seg"><span class="on">نقاط التميّز</span><span>المشاهدات</span><span>الإعجابات</span><span>الأحدث</span></div></div>
+              <div class="tg f2"><svg class="i"><use href="#i-funnel"/></svg>أقل تميّز <div class="seg"><span>الكل</span><span class="on num">3×</span><span class="num">5×</span><span class="num">10×</span></div></div>
+            </div>
+            <div class="grid">
+              <div class="card"><div class="th t1"><span class="badge num hot">62×</span><span class="dur num">0:38</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">2.9M</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">184K</span></span></div><div class="cd">قبل 3 أيام</div></div></div>
+              <div class="card"><div class="th t2"><span class="badge num hot">18×</span><span class="dur num">0:52</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">840K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">61K</span></span></div><div class="cd">قبل أسبوع</div></div></div>
+              <div class="card"><div class="th t3"><span class="badge num hot">7.4×</span><span class="dur num">1:04</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">355K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">22K</span></span></div><div class="cd">قبل شهر</div></div></div>
+              <div class="card"><div class="th t4"><span class="badge num hot">3.1×</span><span class="dur num">0:29</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">149K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">9.8K</span></span></div><div class="cd">قبل شهرين</div></div></div>
+              <div class="card"><div class="th t5"><span class="badge num">2.6×</span><span class="dur num">0:45</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">124K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">7.1K</span></span></div><div class="cd">قبل 3 أيام</div></div></div>
+              <div class="card"><div class="th t6"><span class="badge num">2.2×</span><span class="dur num">0:33</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">105K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">6.4K</span></span></div><div class="cd">قبل أسبوعين</div></div></div>
+              <div class="card"><div class="th t7"><span class="badge num">1.8×</span><span class="dur num">0:41</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">86K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">5.2K</span></span></div><div class="cd">قبل شهر</div></div></div>
+              <div class="card"><div class="th t8"><span class="badge num">1.4×</span><span class="dur num">0:57</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">67K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">3.9K</span></span></div><div class="cd">قبل 3 أشهر</div></div></div>
+              <div class="card"><div class="th t9"><span class="badge num">1.1×</span><span class="dur num">0:36</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">53K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">2.8K</span></span></div><div class="cd">قبل شهرين</div></div></div>
+              <div class="card"><div class="th t10"><span class="badge num">0.9×</span><span class="dur num">0:48</span></div><div class="cm"><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">43K</span></span><span><svg class="i"><use href="#i-heart"/></svg><span class="num">2.1K</span></span></div><div class="cd">قبل 4 أشهر</div></div></div>
+            </div>
+          </div>
+          <aside class="side">
+            <div class="viewer t1">
+              <div class="bar">
+                <div class="scrub"><div class="tr"></div><div class="pg"></div><div class="kn"></div></div>
+                <div class="brow">
+                  <b><svg class="i"><use href="#i-play-fill"/></svg></b>
+                  <b><svg class="i"><use href="#i-arrow-counter-clockwise"/></svg><small>5</small></b>
+                  <b><svg class="i"><use href="#i-arrow-clockwise"/></svg><small>5</small></b>
+                  <b><svg class="i"><use href="#i-caret-left"/></svg></b>
+                  <b><svg class="i"><use href="#i-caret-right"/></svg></b>
+                  <span class="tm">0:14 / 0:38</span><span class="sp"></span>
+                  <b class="x">1×</b>
+                  <b><svg class="i"><use href="#i-speaker-high"/></svg></b>
+                </div>
+              </div>
+            </div>
+            <div class="stats">
+              <div class="dtop"><span class="bn"><svg class="i"><use href="#i-chart-line-up"/></svg>Amine Reels</span><span>قبل 3 أيام</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-eye"/></svg>المشاهدات</span><span class="v num">2.9M</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-heart"/></svg>الإعجابات</span><span class="v num">184K</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-chat-circle"/></svg>التعليقات</span><span class="v num">2,310</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-lightning"/></svg>نقاط التميّز</span><span class="v hot num">62×</span></div>
+              <div class="rw"><span class="k"><svg class="i"><use href="#i-calendar-blank"/></svg>تاريخ النشر</span><span class="v">قبل 3 أيام<small class="num">22/11/2026</small></span></div>
+              <div class="acts">
+                <span><svg class="i"><use href="#i-bookmark-simple"/></svg>حفظ</span>
+                <span><svg class="i"><use href="#i-folder-simple"/></svg>مجلد</span>
+                <span><svg class="i"><use href="#i-waveform"/></svg>النص</span>
+                <span><svg class="i"><use href="#i-download-simple"/></svg>تنزيل</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<h2 id="install">التثبيت (دقيقتان)</h2>
-<ol class="steps">
-  <li><div>اضغط <b>«تنزيل الإضافة»</b> في الأعلى، ثم فك ضغط الملف <code>Amine-Reels.zip</code>.</div></li>
-  <li><div>افتح <code>chrome://extensions</code> في Chrome، أو <code>brave://extensions</code> في Brave.</div></li>
-  <li><div>فعّل <b>Developer mode</b> (وضع المطوّر) في أعلى الصفحة.</div></li>
-  <li><div>اضغط <b>Load unpacked</b> واختر المجلد الذي فككته.</div></li>
-  <li><div>افتح إنستغرام وأنت مسجّل الدخول، ثم اذهب لأي حساب واضغط تبويب <b>«ريلز مرتبة»</b>.</div></li>
-</ol>
-<p class="note" style="text-align:center">للتحديث: نزّل الملف الجديد، ضعه مكان القديم، ثم اضغط زر التحديث على بطاقة الإضافة.</p>
+  <section class="feats" id="features">
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-chart-line-up"/></svg></span><h3>ترتيب بنقاط التميّز</h3><p>مشاهدات الريل مقسومة على وسيط مشاهدات الحساب.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-eye"/></svg></span><h3>إحصاءات داخل إنستغرام</h3><p>المشاهدات والإعجابات والتعليقات وتاريخ النشر تحت كل ريل.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-squares-four"/></svg></span><h3>عدة حسابات معًا</h3><p>ريلز عشرة حسابات في شبكة واحدة، مع فلتر بالتاريخ.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-folder-simple"/></svg></span><h3>مكتبة ومجلدات</h3><p>احفظ ما يلهمك، ونزّل المجلد كله بالملف الأصلي.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-play-fill"/></svg></span><h3>تحكّم كامل في الفيديو</h3><p>تقديم 5 ثوانٍ، فريم بفريم، السرعة والصوت تحت الريل.</p></div>
+    <div class="feat"><span class="ic"><svg class="i"><use href="#i-moon"/></svg></span><h3>داكن وفاتح</h3><p>بألوان إنستغرام نفسها، داخل الصفحة أو في نافذة منفصلة.</p></div>
+  </section>
 
-<h2 id="keys">الاختصارات</h2>
-<table>
-  <tr><td><kbd>Space</kbd> أو <kbd>K</kbd></td><td>تشغيل / إيقاف</td></tr>
-  <tr><td><kbd>J</kbd> <kbd>L</kbd> أو <kbd>←</kbd> <kbd>→</kbd></td><td>5 ثوانٍ للخلف / للأمام — مع <kbd>Shift</kbd>: 10 ثوانٍ</td></tr>
-  <tr><td><kbd>,</kbd> <kbd>.</kbd></td><td>فريم للخلف / للأمام — مع <kbd>Shift</kbd>: 10 فريمات</td></tr>
-  <tr><td><kbd>[</kbd> <kbd>]</kbd> <kbd>\</kbd></td><td>أبطأ / أسرع / السرعة 1×</td></tr>
-  <tr><td><kbd>M</kbd> · <kbd>↑</kbd> <kbd>↓</kbd></td><td>كتم الصوت · رفع وخفض الصوت</td></tr>
-  <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>القفز إلى 0% – 90% من الريل</td></tr>
-  <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></td><td>فتح شبكة الريلز</td></tr>
-</table>
+  <section class="sec" id="install">
+    <div class="sh"><p class="eyebrow">دقيقتان</p><h2>طريقة التثبيت</h2></div>
+    <div class="motion">
+      <div class="frame frame-install"><div class="stagebox" aria-hidden="true">
+        <div class="stage" id="stage" data-s="1">
+          <!-- 1: download + unzip -->
+          <div class="scene s1">
+            <div class="pg1">
+              <div class="lg"><img src="icon.png" alt="">Amine Reels</div>
+              <div class="h">اعرف <span>أنجح الريلز</span></div>
+              <span class="btn btn-sm btn-pri dlb" id="m-dl"><svg class="i"><use href="#i-download-simple"/></svg>تنزيل الإضافة</span>
+            </div>
+            <div class="shelf">
+              <div class="file" id="m-zip"><span class="fi"><svg class="i"><use href="#i-download-simple"/></svg></span><span>Amine-Reels.zip<small>Downloads</small></span></div>
+              <svg class="i arrowx" id="m-arr" style="width:20px;height:20px"><use href="#i-caret-right"/></svg>
+              <div class="file" id="m-fold"><span class="fi bl"><svg class="i"><use href="#i-folder-simple"/></svg></span><span>Amine-Reels<small>Folder</small></span></div>
+            </div>
+          </div>
+          <!-- 2-4: extensions page -->
+          <div class="scene s2">
+            <div class="chrome">
+              <div class="tabs"><div class="dots"><i></i><i></i><i></i></div><div class="tab">Extensions</div></div>
+              <div class="addr"><span class="nv"><svg class="i"><use href="#i-caret-left"/></svg><svg class="i"><use href="#i-caret-right"/></svg><svg class="i"><use href="#i-arrow-clockwise"/></svg></span><div class="ab"><span id="m-url"></span><i></i></div></div>
+            </div>
+            <div class="xh"><b>Extensions</b><div class="srch"></div><div class="dev">Developer mode <span class="tgl" id="m-tgl"></span></div></div>
+            <div class="devbar" id="m-devbar"><span class="ob" id="m-load">Load unpacked</span><span class="ob">Pack extension</span><span class="ob">Update</span></div>
+            <div class="xg">
+              <div class="xc ar" id="m-card"><div class="r1"><img src="icon.png" alt=""><div><b>Amine Reels</b><small>1.0</small></div></div><p>اعرف أنجح الريلز في أي حساب</p><div class="ft"><span class="tgl on"></span></div></div>
+              <div class="xc"><div class="r1"><span class="ico"></span><span class="ln" style="width:90px"></span></div><span class="ln" style="width:80%"></span><span class="ln" style="width:55%"></span></div>
+              <div class="xc"><div class="r1"><span class="ico"></span><span class="ln" style="width:70px"></span></div><span class="ln" style="width:70%"></span><span class="ln" style="width:45%"></span></div>
+            </div>
+            <div class="dlg" id="m-dlg">
+              <div class="dt">Select the extension folder</div>
+              <div class="fr"><svg class="i"><use href="#i-folder-simple"/></svg>Desktop</div>
+              <div class="fr"><svg class="i"><use href="#i-folder-simple"/></svg>Documents</div>
+              <div class="fr" id="m-row"><svg class="i"><use href="#i-folder-simple"/></svg>Amine-Reels</div>
+              <div class="df"><span>Cancel</span><span class="go" id="m-sel">Select</span></div>
+            </div>
+          </div>
+          <!-- 5: instagram -->
+          <div class="scene s5">
+            <div class="chrome">
+              <div class="tabs"><div class="dots"><i></i><i></i><i></i></div><div class="tab">Instagram</div></div>
+              <div class="addr"><span class="nv"><svg class="i"><use href="#i-caret-left"/></svg><svg class="i"><use href="#i-caret-right"/></svg><svg class="i"><use href="#i-arrow-clockwise"/></svg></span><div class="ab">instagram.com/account/</div></div>
+            </div>
+            <div class="ig">
+              <div class="nav"><i style="width:80%"></i><i style="width:60%"></i><i style="width:70%"></i><i style="width:50%"></i><i style="width:65%"></i></div>
+              <div class="pf">
+                <div class="ph"><div class="av"></div><div class="ls"><i style="width:140px"></i><i style="width:220px"></i><i style="width:180px"></i></div></div>
+                <div class="itabs"><span><svg class="i" style="width:13px;height:13px"><use href="#i-squares-four"/></svg>المنشورات</span><span><svg class="i" style="width:13px;height:13px"><use href="#i-film-reel"/></svg>ريلز</span><span class="rt" id="m-tab"><svg class="i" style="width:13px;height:13px"><use href="#i-chart-line-up"/></svg>ريلز مرتبة</span></div>
+                <div class="ggrid" id="m-grid"><div><div class="th t1"><span class="badge num hot">62×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">2.9M</span></span></div></div><div><div class="th t2"><span class="badge num hot">18×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">840K</span></span></div></div><div><div class="th t3"><span class="badge num hot">7.4×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">355K</span></span></div></div><div><div class="th t4"><span class="badge num hot">3.1×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">149K</span></span></div></div><div><div class="th t5"><span class="badge num">2.6×</span></div><div class="cs"><span><svg class="i"><use href="#i-eye"/></svg><span class="num">124K</span></span></div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="cur" id="m-cur"><svg viewBox="0 0 24 24"><path d="M4 2.5l15 8.6-6.6 1.7 3.8 6.9-2.6 1.4-3.8-6.9L5 19z" fill="#1A1C1F" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+        </div>
+      </div></div>
+      <div class="steps">
+        <div class="mctl" id="m-ctl" hidden><button type="button" id="m-prev" aria-label="الخطوة السابقة"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></svg></button><button type="button" id="m-play" aria-label="إيقاف مؤقت"><svg viewBox="0 0 256 256" fill="currentColor"><path id="m-play-p" d="M200,32H160a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H160V48h40ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Zm0,176H56V48H96Z"/></svg></button><button type="button" id="m-next" aria-label="الخطوة التالية"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/></svg></button></div><div class="dotsn" id="m-dots"><button type="button" class="on">1</button><button type="button">2</button><button type="button">3</button><button type="button">4</button><button type="button">5</button></div>
+        <div class="cap" id="m-cap">نزّل الملف وفكّه</div>
+      </div>
+    </div>
+    <ol class="static">
+      <li><span class="n">1</span><b>نزّل الملف وفكّه</b><span><code>Amine-Reels.zip</code></span></li>
+      <li><span class="n">2</span><b>افتح صفحة الإضافات</b><span><code>chrome://extensions</code> أو <code>brave://extensions</code></span></li>
+      <li><span class="n">3</span><b>فعّل وضع المطوّر</b><span><code>Developer mode</code></span></li>
+      <li><span class="n">4</span><b>اختر المجلد المفكوك</b><span><code>Load unpacked</code></span></li>
+      <li><span class="n">5</span><b>افتح «ريلز مرتبة»</b><span>في أي حساب على إنستغرام</span></li>
+    </ol>
+    <p class="upd">للتحديث: نزّل الملف الجديد مكان القديم، ثم اضغط زر التحديث على بطاقة الإضافة.</p>
+  </section>
 
-<h2>الخصوصية</h2>
-<p class="privacy">الإضافة تعمل داخل متصفحك فقط، وتقرأ ما يعرضه إنستغرام لحسابك. ما تحفظه يبقى في جهازك. لا خادم، ولا جمع بيانات، ولا إرسال لأي جهة. <a href="privacy.html">سياسة الخصوصية وشروط الاستخدام</a></p>
+  <section class="sec" id="keys">
+    <div class="sh"><p class="eyebrow">تحت الريل مباشرة</p><h2>الاختصارات</h2></div>
+    <div class="keys">
+      <div class="key"><div class="ks"><kbd>Space</kbd><em>/</em><kbd>K</kbd></div><p>تشغيل وإيقاف</p></div>
+      <div class="key"><div class="ks"><kbd>J</kbd><kbd>L</kbd><em>/</em><kbd>←</kbd><kbd>→</kbd></div><p>5 ثوانٍ للخلف وللأمام<small>مع Shift: 10 ثوانٍ</small></p></div>
+      <div class="key"><div class="ks"><kbd>,</kbd><kbd>.</kbd></div><p>فريم للخلف وللأمام<small>مع Shift: 10 فريمات</small></p></div>
+      <div class="key"><div class="ks"><kbd>[</kbd><kbd>]</kbd><kbd>\</kbd></div><p>أبطأ، أسرع، السرعة 1×</p></div>
+      <div class="key"><div class="ks"><kbd>M</kbd><em>·</em><kbd>↑</kbd><kbd>↓</kbd></div><p>كتم الصوت، رفعه وخفضه</p></div>
+      <div class="key"><div class="ks"><kbd>0</kbd><em>–</em><kbd>9</kbd></div><p>القفز إلى 0% – 90% من الريل</p></div>
+      <div class="key"><div class="ks"><kbd>Alt</kbd><em>+</em><kbd>Shift</kbd><em>+</em><kbd>R</kbd></div><p>فتح شبكة الريلز</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="closing">
+      <h2>مجانية، مفتوحة المصدر، وتعمل في متصفحك.</h2>
+      <a class="btn btn-lg btn-pri" href="https://github.com/aminellkadaoui/amine-reels/releases/latest/download/Amine-Reels.zip"><svg class="i"><use href="#i-download-simple"/></svg>تنزيل الإضافة</a>
+      <p>ما تحفظه يبقى في جهازك. لا خادم، ولا جمع بيانات، ولا إرسال لأي جهة. <a href="privacy.html">سياسة الخصوصية</a></p>
+    </div>
+  </section>
+</main>
 
 <footer>
-  <span>Amine Reels · مفتوحة المصدر برخصة MIT</span>
-  <a href="https://github.com/aminellkadaoui/amine-reels">GitHub</a>
-  <a href="https://github.com/aminellkadaoui/amine-reels/issues">أبلغ عن مشكلة</a>
-  <span>غير تابعة لإنستغرام ولا لشركة Meta</span>
+  <div class="fc">
+    <div class="fb">
+      <a class="brand" href="#"><img src="icon.png" alt="">Amine Reels</a>
+      <p>غير تابعة لإنستغرام ولا لشركة Meta.</p>
+      <a class="rb" href="https://github.com/aminellkadaoui/amine-reels" aria-label="GitHub"><svg class="i"><use href="#i-github-logo"/></svg></a>
+      <span class="cp">مفتوحة المصدر برخصة MIT</span>
+    </div>
+    <nav class="fn">
+      <div><a href="#features">الميزات</a><a href="#install">طريقة التثبيت</a><a href="#keys">الاختصارات</a></div>
+      <div><a href="https://github.com/aminellkadaoui/amine-reels">GitHub</a><a href="https://github.com/aminellkadaoui/amine-reels/issues">أبلغ عن مشكلة</a><a href="privacy.html">الخصوصية</a></div>
+    </nav>
+  </div>
 </footer>
-</div>
+
+<script>
+(function(){
+  var box=document.querySelector('.stagebox'),st=document.getElementById('stage');
+  if(!box||!st)return;
+  var W=760,sc=1;
+  function fit(){sc=box.clientWidth/W;st.style.transform='scale('+sc+')';}
+  fit();if(window.ResizeObserver)new ResizeObserver(fit).observe(box);else addEventListener('resize',fit);
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+
+  var $=function(id){return document.getElementById(id)};
+  var cur=$('m-cur'),cap=$('m-cap'),dots=$('m-dots').children;
+  var caps=['','نزّل الملف وفكّه','افتح صفحة الإضافات','فعّل وضع المطوّر','اختر المجلد المفكوك','افتح «ريلز مرتبة»'];
+  var vis=true,waiters=[];
+  if(window.IntersectionObserver)new IntersectionObserver(function(e){vis=e[0].isIntersecting;if(vis){waiters.forEach(function(f){f()});waiters=[];}}).observe(box);
+  function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
+  function gate(){return vis?Promise.resolve():new Promise(function(r){waiters.push(r)})}
+  var px=600,py=380;
+  function put(x,y,instant){px=x;py=y;if(instant){cur.style.transition='none';cur.style.transform='translate('+x+'px,'+y+'px)';cur.offsetWidth;cur.style.transition='';}else cur.style.transform='translate('+x+'px,'+y+'px)';}
+  function at(el){var r=el.getBoundingClientRect(),s=st.getBoundingClientRect();return [(r.left-s.left+r.width/2)/sc-4,(r.top-s.top+r.height/2)/sc-3];}
+  async function moveTo(el){var p=at(el);put(p[0],p[1]);await wait(1000);}
+  async function click(el){cur.classList.add('dn');if(el)el.classList.add('press');await wait(180);cur.classList.remove('dn');if(el)el.classList.remove('press');await wait(120);}
+  function step(n){for(var i=0;i<dots.length;i++)dots[i].className=i===n-1?'on':'';cap.textContent=caps[n];}
+  function scene(n){st.setAttribute('data-s',n);}
+  function reset(){
+    ['m-zip','m-arr','m-fold','m-devbar','m-dlg','m-card','m-grid'].forEach(function(id){$(id).classList.remove('in')});
+    $('m-tgl').classList.remove('on');$('m-row').classList.remove('sel');$('m-tab').classList.remove('on');$('m-url').textContent='';
+  }
+  // ---- step player: the viewer picks what to see (step numbers, previous / next, pause / play)
+  var run=0,playing=true,curStep=1;
+  function Stop(){}
+  function w(ms){var my=run;return wait(ms).then(function(){if(my!==run)throw new Stop();});}
+  async function mv(el){var p=at(el);put(p[0],p[1]);await w(1000);}
+  async function ck(el){cur.classList.add('dn');if(el)el.classList.add('press');await w(180);cur.classList.remove('dn');if(el)el.classList.remove('press');await w(120);}
+  async function type(el,t){for(var i=1;i<=t.length;i++){el.textContent=t.slice(0,i);await w(45);}}
+  function stateFor(n){ // the screen as it is at the start of step n
+    reset();scene(n>=5?5:n>=2?2:1);
+    if(n>=3)$('m-url').textContent='chrome://extensions';
+    if(n>=4){$('m-tgl').classList.add('on');$('m-devbar').classList.add('in');}
+  }
+  var S={
+    1:async function(){put(640,330,true);await w(500);await mv($('m-dl'));await ck($('m-dl'));$('m-zip').classList.add('in');await w(1300);$('m-arr').classList.add('in');$('m-fold').classList.add('in');await w(1600);},
+    2:async function(){put(360,200,true);await w(400);await type($('m-url'),'chrome://extensions');await w(1200);},
+    3:async function(){await mv($('m-tgl'));await ck();$('m-tgl').classList.add('on');await w(300);$('m-devbar').classList.add('in');await w(1200);},
+    4:async function(){await mv($('m-load'));await ck($('m-load'));$('m-dlg').classList.add('in');await w(1000);await mv($('m-row'));await ck();$('m-row').classList.add('sel');await w(400);await mv($('m-sel'));await ck($('m-sel'));$('m-dlg').classList.remove('in');await w(800);$('m-card').classList.add('in');await w(1600);},
+    5:async function(){put(380,330,true);await w(500);await mv($('m-tab'));await ck($('m-tab'));$('m-tab').classList.add('on');$('m-grid').classList.add('in');await w(1000);put(600,400);await w(2600);}
+  };
+  async function play(n){
+    var my=++run;curStep=n;stateFor(n);step(n);
+    try{
+      for(;;){
+        await gate();if(my!==run)return;
+        await S[curStep]();
+        if(!playing)return;              // paused: stay on the finished step
+        curStep=curStep%5+1;stateFor(curStep);step(curStep);
+      }
+    }catch(e){if(!(e instanceof Stop))throw e;}
+  }
+  var pp=$('m-play-p'),PAUSE=pp.getAttribute('d'),PLAY='M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z';
+  function paint(){pp.setAttribute('d',playing?PAUSE:PLAY);$('m-play').setAttribute('aria-label',playing?'إيقاف مؤقت':'تشغيل');}
+  for(var i=0;i<dots.length;i++)(function(n){dots[n-1].addEventListener('click',function(){play(n);});})(i+1);
+  $('m-prev').addEventListener('click',function(){play(curStep===1?5:curStep-1);});
+  $('m-next').addEventListener('click',function(){play(curStep%5+1);});
+  $('m-play').addEventListener('click',function(){playing=!playing;paint();if(playing)play(curStep);});
+  $('m-ctl').hidden=false;paint();
+  play(1);
+})();
+</script>
 </body>
 </html>

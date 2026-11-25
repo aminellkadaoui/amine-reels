@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Amine Reels",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "Personal Instagram reel research: outlier grid, reel stats, folders, downloads, and full video control.",
   "permissions": [
     "storage",
