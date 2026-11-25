@@ -867,6 +867,7 @@
     // In Instagram's post window: the window's own colour. On the page (reels feed, reel page): no background at all,
     // so the bar sits on Instagram's page exactly like Instagram's own white (light) / black (dark), never a box.
     var inDlg = !!(target && target.closest && target.closest('[role="dialog"]'));
+    if (inDlg) lastDlgAt = now;
     var ov = ovMode();
     if (ov !== bar.hasAttribute('data-ov')) { if (ov) bar.setAttribute('data-ov', ''); else bar.removeAttribute('data-ov'); last.cls = null; }
     var surf = ov ? '' : underMode() ? (inDlg ? (room.surface || '') : 'transparent') : '';
@@ -995,10 +996,16 @@
     document.addEventListener('webkitfullscreenchange', function () { mount(); last.box = null; requestTick(); });
     try {
       new MutationObserver(function (muts) {
+        var added = null;
         for (var i = 0; i < muts.length; i++) {
           var m = muts[i];
-          if (m.addedNodes.length || m.removedNodes.length) { scheduleScan(); break; }
+          if (m.addedNodes.length || m.removedNodes.length) scheduleScan();
+          for (var j = 0; !added && j < m.addedNodes.length; j++) {
+            var n = m.addedNodes[j];
+            if (n.nodeType === 1) added = n.tagName === 'VIDEO' ? n : (n.querySelector ? n.querySelector('video') : null);
+          }
         }
+        if (added) { try { fastAdopt(added); } catch (e) {} }
         if (host && !host.isConnected) mount();
       }).observe(document.documentElement, { childList: true, subtree: true });
     } catch (e) {}
@@ -1012,6 +1019,25 @@
       requestTick();                           // the bar under the reel shows as soon as its room is decided
     }, 1500);
     scan();
+  }
+
+  // Post window, next / previous post: Instagram adds the new reel's <video> while the window is already open and
+  // settled. Adopt it right here (this observer runs before the browser paints), so the new reel is drawn already
+  // shrunk with the bar under it: no full-size frame, no wait for the next scan.
+  var lastDlgAt = 0;
+  function fastAdopt(v) {
+    if (!bar || v === target || appCovers()) return;
+    if (!(v.closest && v.closest('[role="dialog"]'))) return;
+    var wasDlg = (target && target.closest && target.closest('[role="dialog"]')) || Date.now() - lastDlgAt < 2000;
+    if (!wasDlg) return;                       // first open: the window still animates in, the normal path measures it
+    if (videos.indexOf(v) < 0) videos.push(v);
+    if (!score(v)) return;
+    setTarget(v);                              // measures and applies the room in this same task (ensureRoom now)
+    if (!room || room.v !== v) { try { ensureRoom(true, true); } catch (e) {} }
+    requestTick();
+    // its size may only be final a frame later: measure again (undo + measure + apply in one task, no flicker)
+    var again = function () { if (target === v) { try { ensureRoom(true, true); } catch (e) {} requestTick(); } };
+    requestAnimationFrame(again); setTimeout(again, 150);
   }
 
   // ---------- public API ----------
