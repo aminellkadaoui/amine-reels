@@ -489,6 +489,16 @@
     '.h2 .loopb{display:none}',
     '.h4 .time,.h4 .sep1{display:none}',
     '.h5 .fbk,.h5 .ffw{display:none}',
+    // Home feed only: the bar sits INSIDE the video at its bottom (Instagram's like/comment row is right under the post),
+    // on a soft dark fade, white controls (like Instagram's own video controls).
+    '.bar[data-ov]{background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.55));color:#fff;padding:2px 6px 4px}',
+    '.bar[data-ov] button{color:#fff}',
+    '.bar[data-ov] button:hover{background:rgba(255,255,255,.18)}',
+    '.bar[data-ov] button.act,.bar[data-ov] button.act:hover{background:' + BLUE + '}',
+    '.bar[data-ov] .time{color:rgba(255,255,255,.85)}',
+    '.bar[data-ov] .track{background:rgba(255,255,255,.35)}',
+    '.bar[data-ov] .buf{background:rgba(255,255,255,.35)}',
+    '.bar[data-ov] .sep{background:rgba(255,255,255,.35)}',
     '.toast{position:fixed;display:none;pointer-events:none;background:' + IG('primary-text', '0,0,0') + ';color:' + IG('primary-background', '255,255,255') + ';border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}',
     '.toast.on{display:block}'
   ].join('');
@@ -669,6 +679,10 @@
     var vw = window.innerWidth, vh = window.innerHeight;
     var left = Math.max(r.left, 0), right = Math.min(r.right, vw);
     var w = Math.max(0, right - left);
+    if (ovMode()) {                       // home feed: inside the video, at its (visible) bottom
+      var bot = Math.min(r.bottom, vh), t0 = Math.max(bot - BAR_H, r.top, EDGE);
+      return { left: Math.round(left), top: Math.round(t0), width: Math.round(w), height: BAR_H };
+    }
     var top = r.bottom + GAP;
     var limit = vh, col = room && room.v === target ? room.col : null;   // bottom of the reel's column, measured live
     if (col) { var cb = col.getBoundingClientRect(); if (cb.height > 0) limit = Math.min(vh, cb.bottom); }
@@ -677,6 +691,8 @@
     return { left: Math.round(left), top: Math.round(top), width: Math.round(w), height: BAR_H };
   }
   // The bar has its own strip under the reel (room made, or the reel already leaves it): no hover needed.
+  function homeFeed(v) { return location.pathname === '/' && !!v && !(v.closest && v.closest('[role="dialog"]')); }
+  function ovMode() { return !!(target && room && room.v === target && room.overlay); }
   function underMode() { return !!(target && room && room.v === target && !room.fallback); }
   function shouldShow(r) {
     if (!target || !r) return false;
@@ -766,6 +782,10 @@
   function ensureRoom(force, now) {
     var v = target;
     if (!v || appCovers() || document.fullscreenElement || document.webkitFullscreenElement) { undoRoom(); return; }
+    if (homeFeed(v)) {
+      if (!(room && room.v === v && room.overlay)) { undoRoom(); room = { v: v, none: true, overlay: true }; last.box = null; }
+      return;
+    }
     if (room && room.v === v && !force) return;
     if (!room && !now && Date.now() - targetSince < ROOM_DELAY) return;   // measure a settled layout, once
     var had = room && room.v === v ? room : null;
@@ -816,6 +836,15 @@
     // on the current reel; pickTarget() moves it to the next one in one step (no hide in between).
     var feed = /^https?:\/\/[^/]+\/reels\//;
     if (feed.test(from) && feed.test(lastHref) && target && target.isConnected) { scheduleScan(0); return; }
+    // Post window: ← / → (or Instagram's arrows) moves from one post URL to the next while the window stays open.
+    // Keep the bar and the reel's room (no hide, no full-size jump); pick the new video at once and re-measure
+    // the room in one task once the new post has settled (undo + measure + apply in the same frame: no flicker).
+    var post = /^https?:\/\/[^/]+\/(?:[^/?#]+\/)?(?:p|reel|reels)\//;
+    if (post.test(from) && post.test(lastHref) && target && target.isConnected && target.closest && target.closest('[role="dialog"]')) {
+      scheduleScan(0);
+      setTimeout(function () { try { ensureRoom(true); } catch (e) {} requestTick(); }, ROOM_DELAY);
+      return;
+    }
     setTarget(null);           // the old reel is gone: hide now, undo any scale, look again shortly
     hideBar();
     scheduleScan(300);
@@ -838,7 +867,9 @@
     // In Instagram's post window: the window's own colour. On the page (reels feed, reel page): no background at all,
     // so the bar sits on Instagram's page exactly like Instagram's own white (light) / black (dark), never a box.
     var inDlg = !!(target && target.closest && target.closest('[role="dialog"]'));
-    var surf = underMode() ? (inDlg ? (room.surface || '') : 'transparent') : '';
+    var ov = ovMode();
+    if (ov !== bar.hasAttribute('data-ov')) { if (ov) bar.setAttribute('data-ov', ''); else bar.removeAttribute('data-ov'); last.cls = null; }
+    var surf = ov ? '' : underMode() ? (inDlg ? (room.surface || '') : 'transparent') : '';
     if (surf !== last.surf) { if (surf) bar.style.setProperty('--ar-surface', surf); else bar.style.removeProperty('--ar-surface'); last.surf = surf; }
     var b = barBox(r);
     var pb = last.box;
