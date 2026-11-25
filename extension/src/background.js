@@ -2,6 +2,52 @@
 // 1) keyboard command → toggle the in-page app
 // 2) AR_OPEN_LIBRARY → open the library page
 // 3) AR_DOWNLOAD → download reels' original files exactly as Instagram serves them (chrome.downloads, no re-encode)
+// 4) update notice: unpacked copies never auto-update, so on startup and every 12 h ask GitHub for the latest
+//    release tag (one GET, no user data sent). Newer → badge «جديد» + ar_update for the popup banner.
+
+// ---------------- update notice ----------------
+const UPDATE_API = 'https://api.github.com/repos/aminellkadaoui/amine-reels/releases/latest';
+const UPDATE_PAGE = 'https://aminellkadaoui.github.io/amine-reels/';
+const UPDATE_ALARM = 'ar_update_check';
+function verParts(v) { return String(v || '').replace(/^v/i, '').split(/[.\-+]/).slice(0, 3).map((x) => parseInt(x, 10) || 0); }
+function isNewer(remote, local) {
+  const a = verParts(remote), b = verParts(local);
+  for (let i = 0; i < 3; i++) { if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0); }
+  return false;
+}
+// localOverride: only for testing the banner without touching the manifest
+async function checkUpdate(localOverride) {
+  const local = localOverride || chrome.runtime.getManifest().version;
+  let rel;
+  try {
+    const res = await fetch(UPDATE_API, { headers: { Accept: 'application/vnd.github+json' }, credentials: 'omit', cache: 'no-store' });
+    if (!res.ok) return { ok: false, status: res.status };
+    rel = await res.json();
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+  const tag = rel && rel.tag_name;
+  if (!tag) return { ok: false };
+  if (isNewer(tag, local)) {
+    const version = String(tag).replace(/^v/i, '');
+    const notes = String(rel.body || '').replace(/\r/g, '').trim().slice(0, 400);
+    await chrome.storage.local.set({ ar_update: { version, url: UPDATE_PAGE, notes, checkedAt: Date.now() } });
+    try { await chrome.action.setBadgeBackgroundColor({ color: '#0F6BFF' }); } catch (e) { }
+    try { if (chrome.action.setBadgeTextColor) await chrome.action.setBadgeTextColor({ color: '#FFFFFF' }); } catch (e) { }
+    await chrome.action.setBadgeText({ text: 'جديد' });
+    return { ok: true, newer: true, version };
+  }
+  await chrome.storage.local.remove('ar_update');
+  await chrome.action.setBadgeText({ text: '' });
+  return { ok: true, newer: false, version: String(tag).replace(/^v/i, '') };
+}
+function scheduleUpdateCheck() {
+  try { chrome.alarms.create(UPDATE_ALARM, { delayInMinutes: 1, periodInMinutes: 12 * 60 }); } catch (e) { }
+  checkUpdate().catch(() => {});
+}
+chrome.runtime.onStartup.addListener(scheduleUpdateCheck);
+chrome.runtime.onInstalled.addListener(scheduleUpdateCheck);
+chrome.alarms.onAlarm.addListener((a) => { if (a && a.name === UPDATE_ALARM) checkUpdate().catch(() => {}); });
+self.checkUpdate = checkUpdate;
+
 chrome.commands.onCommand.addListener(async (cmd) => {
   if (cmd !== 'toggle-app') return;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -11,6 +57,10 @@ chrome.commands.onCommand.addListener(async (cmd) => {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg) return;
+  if (msg.type === 'AR_CHECK_UPDATE') {
+    checkUpdate().then(sendResponse, () => sendResponse({ ok: false }));
+    return true;
+  }
   if (msg.type === 'AR_OPEN_LIBRARY') {
     chrome.tabs.create({ url: chrome.runtime.getURL('src/ui/library.html') });
     sendResponse({ ok: true });

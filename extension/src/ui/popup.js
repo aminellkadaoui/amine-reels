@@ -54,6 +54,18 @@
     });
   } catch (e) {}
 
+  // update notice: background.js stores ar_update only while GitHub has a newer release (and clears it after updating)
+  try {
+    chrome.storage.local.get('ar_update', function (o) {
+      var u = o && o.ar_update;
+      if (!u || !u.version) return;
+      $('updT').textContent = 'نسخة جديدة ' + u.version + ' متاحة';
+      if (u.notes) $('updT').parentNode.title = u.notes;
+      $('updBtn').addEventListener('click', function () { chrome.tabs.create({ url: u.url || 'https://aminellkadaoui.github.io/amine-reels/' }); window.close(); });
+      $('upd').hidden = false;
+    });
+  } catch (e) {}
+
   // Video quick controls → overlay.js  in the active tab.
   Array.prototype.forEach.call(document.querySelectorAll('.vc [data-a]'), function (b) {
     b.addEventListener('click', function () {

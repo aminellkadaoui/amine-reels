@@ -39,6 +39,7 @@
     if (n >= 1e3) return f(n / 1e3) + 'K';
     return String(Math.round(n));
   }
+  function fmtPct(p) { if (p == null || isNaN(p)) return '—'; return (p >= 10 ? String(Math.round(p)) : p >= 0.1 ? (Math.round(p * 10) / 10).toFixed(1).replace(/\.0$/, '') : '<0.1') + '%'; }
   function fmtOutlier(o) { if (o == null || isNaN(o)) return '—'; if (o >= 0 && o < 0.1) return '<0.1×'; /* a real ratio is never 0 (0 views → null) */ return (o >= 10 ? String(Math.round(o)) : (Math.round(o * 10) / 10).toFixed(1).replace(/\.0$/, '')) + '×'; }
   var UNITS = [[31536000, 'سنة', 'سنتين', 'سنوات', 'سنة'], [2592000, 'شهر', 'شهرين', 'أشهر', 'شهرًا'], [604800, 'أسبوع', 'أسبوعين', 'أسابيع', 'أسبوعًا'],
     [86400, 'يوم', 'يومين', 'أيام', 'يومًا'], [3600, 'ساعة', 'ساعتين', 'ساعات', 'ساعة'], [60, 'دقيقة', 'دقيقتين', 'دقائق', 'دقيقة']];
@@ -354,7 +355,9 @@
       });
     });
     var key = s.sort;
-    list.sort(function (a, b) { return (b[key] || 0) - (a[key] || 0) || (b.views || 0) - (a.views || 0); });
+    // unknown values (null / hidden) always last
+    var v = function (r) { var x = r[key]; return x == null || x < 0 ? -1 : x; };
+    list.sort(function (a, b) { return v(b) - v(a) || (b.views || 0) - (a.views || 0); });
     return { list: list, noDate: noDate };
   }
   function shownCreators() {
@@ -362,7 +365,7 @@
     return state.creators.filter(function (c) { return !anySel || selected[c.username]; });
   }
 
-  var SORT_LABEL = { views: 'مشاهدة', likes: 'إعجاب', comments: 'تعليق' };
+  var SORT_LABEL = { views: 'مشاهدة', likes: 'إعجاب', comments: 'تعليق', shares: 'مشاركة', reposts: 'إعادة نشر' };
   function renderFeed() {
     var f = feed(), list = f.list, grid = $('grid'), empty = $('empty');
     var cs = shownCreators();
@@ -377,7 +380,8 @@
       sm.appendChild(el('span', null, [el('span', { class: 'num', text: String(list.length) }), ' ريل معروض', list.length !== total ? ' من ' : '', list.length !== total ? el('span', { class: 'num', text: String(total) }) : null]));
       if (list.length) {
         var t = list[0], k = state.settings.sort;
-        var val = k === 'outlier' ? fmtOutlier(t.outlier) + ' عن وسيطه' : k === 'takenAt' ? (relTime(t.takenAt) || '—') : fmtNum(t[k]) + ' ' + SORT_LABEL[k];
+        var val = k === 'outlier' ? fmtOutlier(t.outlier) + ' عن وسيطه' : k === 'shareOutlier' ? fmtOutlier(t.shareOutlier) + ' عن وسيط مشاركاته'
+          : k === 'shareRate' ? fmtPct(t.shareRate) + ' من المشاهدات' : k === 'takenAt' ? (relTime(t.takenAt) || '—') : fmtNum(t[k]) + ' ' + SORT_LABEL[k];
         sm.appendChild(el('span', { class: 'sep', text: '|' }));
         sm.appendChild(el('span', { class: 'top1' }, [ic('lightning'), 'الأعلى: ',
           el('a', { href: t.url, target: '_blank', rel: 'noopener', dir: 'ltr', text: '@' + t.username }), ' — ', el('span', { class: 'num', text: val }),
@@ -388,6 +392,8 @@
     if (f.noDate) notes.push(f.noDate + ' ريل بلا تاريخ نشر لا تظهر مع فلتر الفترة (سجّل الدخول في إنستغرام لجلب التواريخ).');
     var anyNoDate = cs.some(function (c) { return (c.reels || []).some(function (r) { return !r.takenAt; }); });
     if (state.settings.sort === 'takenAt' && anyNoDate) notes.push('بعض الريلز بلا تاريخ، فتظهر في آخر الترتيب.');
+    if (/^(shares|reposts|shareRate|shareOutlier)$/.test(state.settings.sort) && cs.some(function (c) { return (c.reels || []).some(function (r) { return r.shares == null; }); }))
+      notes.push('الريلز التي لم يرسل إنستغرام عدد مشاركاتها تظهر في آخر الترتيب (حدّث الحساب لجلبه).');
     $('fnote').textContent = notes.join(' ');
 
     grid.textContent = ''; saveBtns = {};
@@ -443,7 +449,8 @@
         el('div', { class: 'stats' }, [
           el('span', { title: 'المشاهدات' }, [ic('eye'), el('span', { class: 'num', text: fmtNum(r.views) })]),
           el('span', { title: 'الإعجابات' }, [ic('heart'), el('span', { class: 'num', text: fmtNum(r.likes) })]),
-          el('span', { title: 'التعليقات' }, [ic('chat-circle'), el('span', { class: 'num', text: fmtNum(r.comments) })])
+          el('span', { title: 'التعليقات' }, [ic('chat-circle'), el('span', { class: 'num', text: fmtNum(r.comments) })]),
+          el('span', { title: 'المشاركات' + (r.shareRate != null ? ' (' + fmtPct(r.shareRate) + ' من المشاهدات)' : '') }, [ic('paper-plane-tilt'), el('span', { class: 'num', text: fmtNum(r.shares) })])
         ]),
         el('div', { class: 'date', text: r.takenAt ? 'نُشر ' + relTime(r.takenAt) : 'تاريخ النشر غير معروف' })
       ]),
@@ -470,10 +477,10 @@
   function stamp() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   $('exCsv').addEventListener('click', function () {
     var meds = {}; state.creators.forEach(function (c) { meds[c.username.toLowerCase()] = c.median; });
-    var cols = ['rank', 'username', 'url', 'views', 'likes', 'comments', 'outlier', 'creatorMedian', 'publishedAt', 'duration', 'caption'];
+    var cols = ['rank', 'username', 'url', 'views', 'likes', 'comments', 'shares', 'reposts', 'shareRatePct', 'outlier', 'shareOutlier', 'creatorMedian', 'publishedAt', 'duration', 'caption'];
     function cell(v) { v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
     var rows = feed().list.map(function (r, i) {
-      return [i + 1, r.username, r.url, r.views, r.likes, r.comments, r.outlier, meds[(r.username || '').toLowerCase()], r.takenAt ? iso(r.takenAt * 1000) : '', r.duration, r.caption].map(cell).join(',');
+      return [i + 1, r.username, r.url, r.views, r.likes, r.comments, r.shares, r.reposts, r.shareRate, r.outlier, r.shareOutlier, meds[(r.username || '').toLowerCase()], r.takenAt ? iso(r.takenAt * 1000) : '', r.duration, r.caption].map(cell).join(',');
     });
     download('amine-research-' + stamp() + '.csv', '﻿' + cols.join(',') + '\n' + rows.join('\n'), 'text/csv;charset=utf-8');
   });

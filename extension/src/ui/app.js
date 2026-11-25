@@ -55,6 +55,10 @@
     var s = o >= 10 ? String(Math.round(o)) : (Math.round(o * 10) / 10).toFixed(1).replace(/\.0$/, '');
     return s + '×';
   }
+  function fmtPct(p) {
+    if (p == null || isNaN(p)) return '—';
+    return (p >= 10 ? String(Math.round(p)) : p >= 0.1 ? (Math.round(p * 10) / 10).toFixed(1).replace(/\.0$/, '') : '<0.1') + '%';
+  }
   function fmtTime(s) {
     if (!isFinite(s) || s < 0) s = 0;
     s = Math.floor(s);
@@ -366,7 +370,7 @@ input,select{font:inherit;color:inherit}
 .dock .dtop .brand{display:inline-flex;align-items:center;gap:6px;color:#0F6BFF;font-weight:500}
 .dock .dtop .brand .ic{width:16px;height:16px}
 .dock .dtop .when{margin-inline-start:auto}
-.dstats{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.dstats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px}
 .dstat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:10px}
 .dstat .num{font-size:15px}
 .dstat .l{font-size:11px;color:#8A919C;display:inline-flex;align-items:center;gap:3px}
@@ -606,7 +610,7 @@ input,select{font:inherit;color:inherit}
     gridEls.count = el('div', { class: 'count' });
     var toolbar = el('div', { class: 'toolbar' }, [
       el('div', { class: 'tgroup' }, [el('span', { class: 'tl' }, [iconEl('sort-ascending'), 'الترتيب']),
-        segControl([['outlier', 'نقاط التميّز'], ['views', 'المشاهدات'], ['likes', 'الإعجابات'], ['comments', 'التعليقات'], ['newest', 'الأحدث']], state.sort, function (v) { state.sort = v; renderGridBody(); })]),
+        (gridEls.sortWrap = el('span', { style: 'display:contents' }))]),
       el('div', { class: 'tgroup' }, [el('span', { class: 'tl' }, [iconEl('funnel'), 'أقل تميّز']),
         segControl([[0, 'الكل'], [2, '2×'], [3, '3×'], [5, '5×'], [10, '10×']], state.minOutlier, function (v) { state.minOutlier = v; renderGridBody(); })]),
       el('div', { class: 'tgroup' }, [el('span', { class: 'tl' }, [iconEl('squares-four'), 'عدد الريلز']),
@@ -625,6 +629,7 @@ input,select{font:inherit;color:inherit}
       gridEls.count
     ]);
     gridEls.body = el('div', { class: 'gbody' });
+    paintSort();
     var inline = settings.mode === 'inline';
     var panel = el('div', { class: 'panel' + (inline ? ' inline' : ''), role: inline ? 'region' : 'dialog', 'aria-label': 'ريلز مرتبة' }, [head, toolbar, gridEls.body]);
     if (inline) { gridLayer = panel; inlineMount().appendChild(panel); }
@@ -634,6 +639,22 @@ input,select{font:inherit;color:inherit}
     }
   }
 
+  // sort options: shares right after outlier (the metric worth studying); reposts / share outlier only when Instagram sent the data
+  function paintSort() {
+    if (!gridEls.sortWrap) return;
+    var reels = (state.data && state.data.reels) || [];
+    var has = function (k) { return reels.some(function (r) { return r[k] != null; }); };
+    var opts = [['outlier', 'نقاط التميّز'], ['shares', 'المشاركات']];
+    if (has('reposts')) opts.push(['reposts', 'إعادة النشر']);
+    if (has('shareOutlier')) opts.push(['shareOutlier', 'تميّز المشاركات']);
+    opts.push(['views', 'المشاهدات'], ['likes', 'الإعجابات'], ['comments', 'التعليقات'], ['newest', 'الأحدث']);
+    if (!opts.some(function (o) { return o[0] === state.sort; })) state.sort = 'outlier';
+    var sig = opts.map(function (o) { return o[0]; }).join(',') + '|' + state.sort;
+    if (gridEls.sortWrap.__sig === sig) return;
+    gridEls.sortWrap.__sig = sig;
+    gridEls.sortWrap.textContent = '';
+    gridEls.sortWrap.appendChild(segControl(opts, state.sort, function (v) { state.sort = v; gridEls.sortWrap.__sig = ''; paintSort(); renderGridBody(); }));
+  }
   function loadProfile(username) {
     state.username = username;
     state.loading = true; state.error = null; state.data = null;
@@ -654,6 +675,7 @@ input,select{font:inherit;color:inherit}
 
   function renderGridHead() {
     if (!gridLayer) return;
+    paintSort();
     var d = state.data, p = d && d.profile;
     gridEls.meta.textContent = '';
     if (p) {
@@ -663,6 +685,7 @@ input,select{font:inherit;color:inherit}
       gridEls.meta.appendChild(el('span', { dir: 'ltr', text: '@' + p.username }));
       if (p.followers != null) gridEls.meta.appendChild(el('span', null, [el('span', { class: 'num', text: fmtNum(p.followers) }), ' متابع']));
       if (d.median) gridEls.meta.appendChild(el('span', null, ['الوسيط ', el('span', { class: 'num', text: fmtNum(d.median) }), ' مشاهدة']));
+      if (d.medianShares) gridEls.meta.appendChild(el('span', null, ['وسيط المشاركات ', el('span', { class: 'num', text: fmtNum(d.medianShares) })]));
     } else {
       gridEls.avatar.style.visibility = 'hidden';
       gridEls.name.textContent = state.username ? '\u2066@' + state.username + '\u2069' : 'ريلز مرتبة';
@@ -674,8 +697,10 @@ input,select{font:inherit;color:inherit}
     var reels = (state.data && state.data.reels) || [];
     var min = state.minOutlier;
     var list = reels.filter(function (r) { return !min || (r.outlier || 0) >= min; });
-    var key = { outlier: 'outlier', views: 'views', likes: 'likes', comments: 'comments', newest: 'takenAt' }[state.sort];
-    list.sort(function (a, b) { return (b[key] || 0) - (a[key] || 0); });
+    var key = { outlier: 'outlier', shares: 'shares', reposts: 'reposts', shareOutlier: 'shareOutlier', views: 'views', likes: 'likes', comments: 'comments', newest: 'takenAt' }[state.sort] || 'outlier';
+    // unknown (null / hidden) values always go last
+    var v = function (r) { var x = r[key]; return x == null || x < 0 ? -1 : x; };
+    list.sort(function (a, b) { return v(b) - v(a) || (b.outlier || 0) - (a.outlier || 0) || (b.views || 0) - (a.views || 0); });
     return list;
   }
 
@@ -728,7 +753,8 @@ input,select{font:inherit;color:inherit}
     var meta = el('div', { class: 'cmeta' }, [
       el('div', { class: 'cstats' }, [
         el('span', null, [iconEl('eye'), el('span', { class: 'num', text: fmtNum(r.views) })]),
-        el('span', null, [iconEl('heart'), el('span', { class: 'num', text: fmtNum(r.likes) })])
+        el('span', null, [iconEl('heart'), el('span', { class: 'num', text: fmtNum(r.likes) })]),
+        el('span', { title: 'المشاركات' }, [iconEl('paper-plane-tilt'), el('span', { class: 'num', text: fmtNum(r.shares) })])
       ]),
       el('div', { class: 'cdate', text: relTime(r.takenAt) })
     ]);
@@ -762,6 +788,10 @@ input,select{font:inherit;color:inherit}
       row('eye', 'المشاهدات', fmtNum(r.views)),
       row('heart', 'الإعجابات', fmtNum(r.likes)),
       row('chat-circle', 'التعليقات', fmtNum(r.comments)),
+      row('paper-plane-tilt', 'المشاركات', [fmtNum(r.shares), el('small', { text: r.shareRate != null ? fmtPct(r.shareRate) + ' من المشاهدات' : r.shares == null ? 'لم يرسلها إنستغرام' : '' })]),
+      r.reposts != null ? row('repeat', 'إعادة النشر', fmtNum(r.reposts)) : null,
+      el('div', { class: 'row' }, [el('span', { class: 'k' }, [iconEl('bookmark-simple'), 'الحفظ']),
+        el('span', { class: 'v', style: 'font-weight:400;font-size:12px;color:var(--mut)', text: 'إنستغرام لا يُظهر عدد الحفظ إلا لصاحب الحساب' })]),
       row('lightning', 'نقاط التميّز', r.outlier != null ? fmtOutlier(r.outlier) : '—', hot ? 'hot' : ''),
       el('div', { class: 'row' }, [el('span', { class: 'k' }, [iconEl('calendar-blank'), 'تاريخ النشر']),
         el('span', { class: 'v', style: 'font-weight:500' }, [relTime(r.takenAt), el('small', { class: 'num', style: 'font-weight:400', text: fmtDate(r.takenAt) })])])
@@ -1214,7 +1244,7 @@ input,select{font:inherit;color:inherit}
       }
       kids.push(el('div', { class: 'dstats' }, [
         stat('eye', 'مشاهدة', fmtNum(r.views)), stat('heart', 'إعجاب', fmtNum(r.likes)),
-        stat('chat-circle', 'تعليق', fmtNum(r.comments)), stat('lightning', 'التميّز', fmtOutlier(r.outlier), hot ? 'hot' : '')]));
+        stat('chat-circle', 'تعليق', fmtNum(r.comments)), stat('paper-plane-tilt', 'مشاركة', fmtNum(r.shares)), stat('lightning', 'التميّز', fmtOutlier(r.outlier), hot ? 'hot' : '')]));
       var slot = el('div'), msgEl = el('div', { class: 'dmsg' });
       var sb = el('button', { type: 'button', class: 'btn', onclick: function () { toggleSave(r); } });
       paintSave(sb, r); saveButtons.push({ btn: sb, reel: r });

@@ -81,6 +81,18 @@
   }
 
   /* ---------------- normalization ---------------- */
+  const SHARE_KEYS = ['reshare_count', 'share_count', 'send_count', 'direct_share_count', 'fb_share_count', 'media_share_count', 'shares_count', 'sharing_count'];
+  const REPOST_KEYS = ['media_repost_count', 'repost_count', 'reposts_count'];
+  // largest real count among the known keys (top level and clips_metadata), plus any other *_count key matching re
+  function countOf(o, keys, re) {
+    const vals = [];
+    for (const src of [o, o.clips_metadata, o.clips_metadata && o.clips_metadata.share_info]) {
+      if (!src || typeof src !== 'object') continue;
+      for (const k of keys) { const v = num(src[k]); if (v !== undefined && v >= 0) vals.push(v); }
+      for (const k in src) { if (re.test(k) && keys.indexOf(k) < 0) { const v = num(src[k]); if (v !== undefined && v >= 0) vals.push(v); } }
+    }
+    return vals.length ? Math.max(...vals) : undefined;
+  }
   function looksLikeMedia(o) {
     const code = o.code || o.shortcode;
     if (typeof code !== 'string' || !/^[A-Za-z0-9_-]{5,}$/.test(code)) return false;
@@ -101,6 +113,10 @@
     const viewsShown = (views === 0 && num(o.like_count) > 0) ? undefined : views;
     const likes = first(num(o.like_count), o.edge_media_preview_like && num(o.edge_media_preview_like.count), o.edge_liked_by && num(o.edge_liked_by.count));
     const comments = first(num(o.comment_count), o.edge_media_to_comment && num(o.edge_media_to_comment.count), o.edge_media_preview_comment && num(o.edge_media_preview_comment.count));
+    // shares (paper-plane / send count) and reposts: Instagram's reel UI shows both, the media JSON may carry them under
+    // several names; take the largest real number. Saves are never public (only the owner sees them), so there is no saves field.
+    const shares = countOf(o, SHARE_KEYS, /^(?!.*repost)(?:[a-z_]*_)?(?:re)?(?:share|send)s?_count$/);
+    const reposts = countOf(o, REPOST_KEYS, /^(?:[a-z_]*_)?reposts?_count$/);
     const cands = o.image_versions2 && o.image_versions2.candidates;
     const isClip = o.product_type === 'clips' || o.media_type === 2 || o.is_video === true;
     const r = {
@@ -114,6 +130,8 @@
       views: (viewsShown === 0 && likes > 0) ? undefined : viewsShown,
       likes: hidden ? -1 : likes,
       comments: comments,
+      shares: shares,
+      reposts: reposts,
       takenAt: first(num(o.taken_at), num(o.taken_at_timestamp)),
       duration: first(num(o.video_duration), dashDuration(o.video_dash_manifest)),
       thumb: first(cands && cands[0] && cands[0].url, o.display_uri, o.display_url, o.thumbnail_src),
@@ -130,6 +148,7 @@
     for (const k in r) if (r[k] !== undefined && r[k] !== null && r[k] !== '') out[k] = r[k];
     // a later object with views 0 must not erase a real count
     if (prev.views > 0 && !(r.views > 0)) out.views = prev.views;
+    for (const k of ['shares', 'reposts']) if (prev[k] > 0 && !(r[k] > 0)) out[k] = prev[k];
     media.set(r.code, out);
     return out;
   }
@@ -303,7 +322,10 @@
     return {
       platform: 'instagram', id: r.id || codeToPk(r.code), code: r.code, url: r.url, username: r.username || '', fullName: r.fullName,
       caption: r.caption || '', views: r.views > 0 ? r.views : null, likes: r.likes === undefined ? -1 : r.likes,
-      comments: r.comments === undefined ? -1 : r.comments, takenAt: r.takenAt || 0, duration: r.duration || 0,
+      comments: r.comments === undefined ? -1 : r.comments,
+      shares: r.shares >= 0 ? r.shares : null, reposts: r.reposts >= 0 ? r.reposts : null,
+      shareRate: r.shares >= 0 && r.views > 0 ? Math.round(r.shares / r.views * 10000) / 100 : null,
+      takenAt: r.takenAt || 0, duration: r.duration || 0,
       thumb: r.thumb || '', videoUrl: r.videoUrl, outlier: r.outlier, hasCaptions: subtitleUrls.has(r.code),
     };
   }
@@ -607,8 +629,11 @@
     const med = median(reels.map((r) => r.views));
     // null = views hidden → UI shows —; tiny ratios keep 2 decimals so they never round down to 0
     for (const r of reels) { const x = med > 0 && r.views > 0 ? r.views / med : null; r.outlier = x == null ? null : x >= 0.1 ? Math.round(x * 10) / 10 : Math.max(0.01, Math.round(x * 100) / 100); }
+    // «تميّز المشاركات»: shares ÷ the median shares of the reels fetched (same rule as outlier; null when unknown)
+    const medS = median(reels.map((r) => r.shares));
+    for (const r of reels) { const x = medS > 0 && r.shares > 0 ? r.shares / medS : null; r.shareOutlier = x == null ? null : x >= 0.1 ? Math.round(x * 10) / 10 : Math.max(0.01, Math.round(x * 100) / 100); }
     const profile = { platform: 'instagram', username: prof.username, fullName: prof.fullName || '', followers: prof.followers != null ? prof.followers : null, pic: prof.pic || '', id: prof.id || '' };
-    const out = { profile, reels, median: med };
+    const out = { profile, reels, median: med, medianShares: medS };
     if (note) { out.partial = true; out.note = note; }
     return out;
   }

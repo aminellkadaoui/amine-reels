@@ -133,7 +133,9 @@
       var hay = [r.username, r.fullName, r.caption, r.transcript && r.transcript.text].join(' ').toLowerCase();
       return hay.indexOf(q) >= 0;
     });
-    list.sort(function (a, b) { return (b[key] || 0) - (a[key] || 0); });
+    // unknown values (null / hidden) always last
+    var v = function (r) { var x = r[key]; return x == null || x < 0 ? -1 : x; };
+    list.sort(function (a, b) { return v(b) - v(a) || (b.views || 0) - (a.views || 0); });
     return list;
   }
   function viewName() { var f = view !== 'all' && folderById(view); return f ? f.name : 'الكل'; }
@@ -175,7 +177,7 @@
     var want = {};
     var nodes = list.map(function (r) {
       var k = keyOf(r); want[k] = 1;
-      var sig = JSON.stringify([r.thumb, r.outlier, r.username, r.caption, r.views, r.likes, r.comments, r.takenAt, r.savedAt,
+      var sig = JSON.stringify([r.thumb, r.outlier, r.username, r.caption, r.views, r.likes, r.comments, r.shares, r.takenAt, r.savedAt,
         !!(r.transcript && r.transcript.text), r.folders || [], folders.map(function (f) { return f.id + f.name; }), r.platform]);
       var c = cards[k];
       if (!c || c.sig !== sig) { if (c && c.node.parentNode) c.node.remove(); c = cards[k] = { node: card(r), sig: sig }; }
@@ -303,7 +305,8 @@
         el('div', { class: 'stats' }, [
           el('span', null, [ic('eye'), el('span', { class: 'num', text: fmtNum(r.views) })]),
           el('span', null, [ic('heart'), el('span', { class: 'num', text: fmtNum(r.likes) })]),
-          el('span', null, [ic('chat-circle'), el('span', { class: 'num', text: fmtNum(r.comments) })])
+          el('span', null, [ic('chat-circle'), el('span', { class: 'num', text: fmtNum(r.comments) })]),
+          el('span', { title: 'المشاركات' }, [ic('paper-plane-tilt'), el('span', { class: 'num', text: fmtNum(r.shares) })])
         ]),
         el('div', { class: 'date', text: 'نُشر ' + relTime(r.takenAt) + ' · حُفظ ' + relTime((r.savedAt || 0) / 1000) }),
         chips.length ? el('div', { class: 'chips' }, chips.map(function (f) { return el('span', { class: 'chip', title: f.name }, [ic('folder-simple'), f.name]); })) : null
@@ -527,10 +530,10 @@
     download('amine-reels-' + stamp() + '.json', JSON.stringify(list, null, 2), 'application/json');
   });
   $('exCsv').addEventListener('click', function () {
-    var cols = ['platform', 'username', 'code', 'url', 'views', 'likes', 'comments', 'outlier', 'publishedAt', 'duration', 'caption', 'savedAt', 'folders', 'transcript'];
+    var cols = ['platform', 'username', 'code', 'url', 'views', 'likes', 'comments', 'shares', 'reposts', 'shareRatePct', 'outlier', 'publishedAt', 'duration', 'caption', 'savedAt', 'folders', 'transcript'];
     function cell(v) { v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
     var rows = filtered().map(function (r) {
-      return [r.platform, r.username, r.code, r.url, r.views, r.likes, r.comments, r.outlier, r.takenAt ? iso(r.takenAt * 1000) : '', r.duration,
+      return [r.platform, r.username, r.code, r.url, r.views, r.likes, r.comments, r.shares, r.reposts, r.shareRate, r.outlier, r.takenAt ? iso(r.takenAt * 1000) : '', r.duration,
         r.caption, iso(r.savedAt), folderNames(r).join(' | '), r.transcript ? (r.transcript.segments && r.transcript.segments.length
           ? r.transcript.segments.map(function (s) { return '[' + fmtTime(s.start) + '] ' + s.text; }).join('\n') : r.transcript.text) : ''].map(cell).join(',');
     });

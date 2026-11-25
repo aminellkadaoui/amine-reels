@@ -1,17 +1,19 @@
 {
   "manifest_version": 3,
   "name": "تحليل الريلز — Reels Analysis",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Personal Instagram reel research: outlier grid, reel stats, folders, downloads, and full video control.",
   "permissions": [
     "storage",
     "tabs",
-    "downloads"
+    "downloads",
+    "alarms"
   ],
   "host_permissions": [
     "https://www.instagram.com/*",
     "https://*.cdninstagram.com/*",
-    "https://*.fbcdn.net/*"
+    "https://*.fbcdn.net/*",
+    "https://api.github.com/*"
   ],
   "background": {
     "service_worker": "src/background.js"

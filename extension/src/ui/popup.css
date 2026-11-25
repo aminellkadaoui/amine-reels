@@ -37,6 +37,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .ibtn.main:hover { background: #0A58D6; color: #FFFFFF; }
 .speed { min-width: 48px; text-align: center; font-size: 15px; }
 .err { color: #F0464E; font-size: 13px; }
+.upd { background: #E8F0FF; border: 1px solid #0F6BFF; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.upd[hidden] { display: none; }
+.upd .ut { display: flex; align-items: center; gap: 8px; font-weight: 500; color: #0F6BFF; }
+.upd .btn.sm { height: 34px; font-size: 13px; }
+.upd .uh { color: #2A2E36; font-size: 12px; line-height: 1.6; }
 
 .keys { display: flex; flex-direction: column; }
 .keys > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid #E3E8EF; }
