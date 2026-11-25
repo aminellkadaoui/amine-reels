@@ -1,4 +1,4 @@
-/* Amine Reels — video control overlay (agent B).
+/* Reels Analysis — video control overlay .
  * Runs in every page and frame (isolated world). Self-contained: depends on no other file.
  * Shadow DOM host: #amine-vc-root. API: window.AmineVC. Messages: {type:'AR_VC', action, value}.
  * Rules: no animations/transitions, no DOM rebuilds while playing (only textContent / style widths). */

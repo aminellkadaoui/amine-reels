@@ -1,4 +1,4 @@
-// Amine Reels — service worker.
+// تحليل الريلز (Reels Analysis) — service worker.
 // 1) keyboard command → toggle the in-page app
 // 2) AR_OPEN_LIBRARY → open the library page
 // 3) AR_DOWNLOAD → download reels' original files exactly as Instagram serves them (chrome.downloads, no re-encode)
@@ -156,7 +156,7 @@ async function runJob(job) {
   const stop = keepAlive();
   const ctx = { tabId: null, opened: null, openTried: false };
   const folder = clean(job.folderName, 60);
-  const dir = 'Amine Reels/' + (folder ? folder + '/' : '');
+  const dir = 'تحليل الريلز/' + (folder ? folder + '/' : '');
   report(job);
   try {
     for (let i = 0; i < job.reels.length; i++) {

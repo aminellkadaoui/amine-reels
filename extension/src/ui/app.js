@@ -1,5 +1,5 @@
-/* Amine Reels — in-page app (isolated world, instagram.com / youtube.com).
- * Owner: agent C. Uses window.ARData (bridge.js) and window.PH (lib/phosphor/icons.js).
+/* Reels Analysis — in-page app (isolated world, instagram.com / youtube.com).
+ *  Uses window.ARData (bridge.js) and window.PH (lib/phosphor/icons.js).
  * Everything lives in one Shadow DOM under #amine-reels-root. No animations, no transitions.
  * Text that changes while a video plays is updated through text nodes only (no DOM rebuilds). */
 (function () {
@@ -239,7 +239,7 @@
         var e = chrome.runtime.lastError;
         if (!msgEl) return;
         if (e || !res || !res.ok) { msgEl.className = base + ' err'; msgEl.textContent = 'تعذّر بدء التنزيل' + (res && res.error ? ': ' + res.error : '.'); }
-        else msgEl.textContent = 'بدأ التنزيل. الملف في مجلد التنزيلات ← Amine Reels.';
+        else msgEl.textContent = 'بدأ التنزيل. الملف في مجلد التنزيلات ← تحليل الريلز.';
       });
     } catch (err) { if (msgEl) { msgEl.className = base + ' err'; msgEl.textContent = 'حُدّثت الإضافة. أعد تحميل الصفحة.'; } }
   }
@@ -492,7 +492,7 @@ input,select{font:inherit;color:inherit}
       var sh = entryHost.attachShadow({ mode: 'open' });
       sh.appendChild(el('style', { text: CSS }));
       entryRoot = el('div', { class: 'root', dir: 'rtl', lang: 'ar' });
-      entryBtn = el('button', { class: 'entry', type: 'button', title: 'Amine Reels: ريلز هذا الحساب مرتبة حسب التميّز (Alt+Shift+R)', onclick: function () { toggleGrid(); } },
+      entryBtn = el('button', { class: 'entry', type: 'button', title: 'تحليل الريلز: ريلز هذا الحساب مرتبة حسب التميّز (Alt+Shift+R)', onclick: function () { toggleGrid(); } },
         [iconEl('chart-line-up'), el('span', { text: 'ريلز مرتبة' })]);
       entryRoot.appendChild(entryBtn);
       sh.appendChild(entryRoot);
@@ -1203,7 +1203,7 @@ input,select{font:inherit;color:inherit}
     dockRoot.textContent = '';
     dockVideo = mostVisibleVideo();
     var dark = wantDark();
-    var top = el('div', { class: 'dtop' }, [el('span', { class: 'brand' }, [iconEl('chart-line-up'), 'Amine Reels']),
+    var top = el('div', { class: 'dtop' }, [el('span', { class: 'brand' }, [iconEl('chart-line-up'), 'تحليل الريلز']),
       r ? el('span', { class: 'when', text: relTime(r.takenAt) + (r.takenAt ? ' · ' : '') }, r.takenAt ? [el('span', { class: 'num', style: 'font-weight:400', text: fmtDate(r.takenAt) })] : null) : null]);
     var kids = [top];
     if (!r) kids.push(el('div', { class: 'dmsg' + (isErr ? ' err' : ''), text: msg || '' }));
@@ -1246,7 +1246,7 @@ input,select{font:inherit;color:inherit}
       minB.title = scardMin ? 'إظهار' : 'تصغير';
     }, 'sm icon ghost', scardMin ? 'إظهار' : 'تصغير');
     var closeB = btn('x', null, function () { scardClosed = true; removeStatsCard(); }, 'sm icon ghost', 'إغلاق حتى تحديث الصفحة');
-    var title = el('span', { class: 't' }, r ? [el('span', { dir: 'ltr', text: '@' + (r.username || '') })] : ['Amine Reels']);
+    var title = el('span', { class: 't' }, r ? [el('span', { dir: 'ltr', text: '@' + (r.username || '') })] : ['تحليل الريلز']);
     var chip = r && r.outlier != null ? el('span', { class: 'chip num', text: fmtOutlier(r.outlier) }) : null;
     var head = el('div', { class: 'shead' }, [iconEl('chart-line-up'), title, chip, minB, closeB]);
     var body = el('div', { class: 'sbody' });

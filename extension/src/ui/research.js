@@ -1,4 +1,4 @@
-/* Amine Research — one mixed feed of reels from many Instagram creators, sorted by performance.
+/* Reels Analysis — research page — one mixed feed of reels from many Instagram creators, sorted by performance.
    Data comes only through an Instagram tab's content script ({type:'AR_DATA'}); cached in chrome.storage.local 'ar_research'. */
 (function () {
   'use strict';

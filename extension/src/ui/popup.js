@@ -1,4 +1,4 @@
-/* Amine Reels — popup. Talks to the active tab: AR_DATA pageInfo, AR_TOGGLE_APP, AR_VC. */
+/* Reels Analysis — popup. Talks to the active tab: AR_DATA pageInfo, AR_TOGGLE_APP, AR_VC. */
 (function () {
   'use strict';
   var PH = window.PH || {};
@@ -54,7 +54,7 @@
     });
   } catch (e) {}
 
-  // Video quick controls → overlay.js (agent B) in the active tab.
+  // Video quick controls → overlay.js  in the active tab.
   Array.prototype.forEach.call(document.querySelectorAll('.vc [data-a]'), function (b) {
     b.addEventListener('click', function () {
       var a = b.getAttribute('data-a'), v = b.getAttribute('data-v');

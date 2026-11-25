@@ -1,4 +1,4 @@
-/* Amine Reels — data bridge (isolated world). Relays ARData.call() to the MAIN-world ig.js / yt.js
+/* Reels Analysis — data bridge (isolated world). Relays ARData.call() to the MAIN-world ig.js / yt.js
  * via window.postMessage, and serves chrome.runtime messages {type:'AR_DATA', fn, args} from popup/library.
  */
 (function () {
@@ -58,7 +58,7 @@
     navTimer = setTimeout(async () => {
       let kind = 'other';
       try { kind = (await call('pageInfo')).kind; } catch (e) { }
-      for (const cb of listeners.navigate.slice()) { try { cb({ url, kind }); } catch (e) { console.error('[Amine Reels]', e); } }
+      for (const cb of listeners.navigate.slice()) { try { cb({ url, kind }); } catch (e) { console.error('[Reels Analysis]', e); } }
     }, 150);
   }
   setInterval(() => { if (location.href !== lastUrl) fireNavigate(location.href); }, 700);

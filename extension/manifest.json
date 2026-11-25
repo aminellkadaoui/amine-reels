@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Amine Reels",
-  "version": "1.6.3",
+  "name": "تحليل الريلز — Reels Analysis",
+  "version": "1.7.0",
   "description": "Personal Instagram reel research: outlier grid, reel stats, folders, downloads, and full video control.",
   "permissions": [
     "storage",
@@ -17,7 +17,7 @@
     "service_worker": "src/background.js"
   },
   "action": {
-    "default_title": "Amine Reels",
+    "default_title": "تحليل الريلز",
     "default_popup": "src/ui/popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",

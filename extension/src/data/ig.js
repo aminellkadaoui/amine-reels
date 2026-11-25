@@ -1,4 +1,4 @@
-/* Amine Reels — Instagram data layer (MAIN world, document_start).
+/* Reels Analysis — Instagram data layer (MAIN world, document_start).
  * Read-only. Sources, in order:
  *   1. passive cache: JSON the page itself already loaded (SSR <script type="application/json"> + fetch/XHR responses)
  *   2. same-origin reads the logged-in page itself does (web_profile_info, clips/user, media/info, feed/user)
@@ -584,7 +584,7 @@
     }
     if (!codes.length) throw lastErr || err('لم أجد ريلز لهذا الحساب.');
     if (!fetched) note = 'نتيجة جزئية: عرضتُ الريلز التي حمّلتها الصفحة فقط (' + codes.length + ').' + (lastErr ? ' السبب: ' + lastErr.message : ' سجّل الدخول في إنستغرام لجلب المزيد مع التواريخ.') ;
-    if (!fetched && diag.length) try { console.debug('[Amine Reels] requests:', diag.slice(-6).join(' · ')); } catch (e) { } // technical details stay out of the Arabic UI
+    if (!fetched && diag.length) try { console.debug('[Reels Analysis] requests:', diag.slice(-6).join(' · ')); } catch (e) { } // technical details stay out of the Arabic UI
 
     // fill missing dates / views one by one from media/info (the request the reel page itself makes)
     if (!(lastErr && lastErr.message === E_RATE)) {

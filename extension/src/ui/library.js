@@ -1,4 +1,4 @@
-/* Amine Reels — library page: saved reels ('ar_library'), folders ('ar_folders'), downloads of the original files. */
+/* Reels Analysis — library page: saved reels ('ar_library'), folders ('ar_folders'), downloads of the original files. */
 (function () {
   'use strict';
   // Phosphor 2.1.1 regular (MIT) — icons this page needs that lib/phosphor/icons.js may not carry.
@@ -491,7 +491,7 @@
       if (job.finished) head.appendChild(el('button', { class: 'btn sm', type: 'button', text: 'إغلاق', onclick: function () { job = null; dlParts = null; drawDl(); render(); } }));
       box.appendChild(head);
       box.appendChild(el('div', { class: 'bar' }, [dlParts.fill]));
-      box.appendChild(el('div', { class: 'where', text: 'في مجلد التنزيلات: Amine Reels/' + (job.name ? job.name + '/' : '') + ' · بصيغة الملف الأصلية كما يقدّمها إنستغرام' }));
+      box.appendChild(el('div', { class: 'where', text: 'في مجلد التنزيلات: تحليل الريلز/' + (job.name ? job.name + '/' : '') + ' · بصيغة الملف الأصلية كما يقدّمها إنستغرام' }));
       box.appendChild(dlParts.list);
     }
     var ok = job.done - job.failed.length;
