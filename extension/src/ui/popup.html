@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>Amine Reels</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="head">
+    <img class="logo" src="../../icons/icon-48.png" alt="">
+    <div class="ht">
+      <div class="name" dir="ltr">Amine Reels</div>
+      <div class="status" id="status">جارٍ فحص الصفحة…</div>
+    </div>
+  </header>
+
+  <section class="actions">
+    <button class="btn primary" id="openGrid" type="button"><span class="ic" data-ic="squares-four"></span><span>افتح شبكة الريلز</span></button>
+    <button class="btn" id="openLib" type="button"><span class="ic" data-ic="bookmark-simple"></span><span>المكتبة</span><span class="count num" id="libCount"></span></button>
+    <button class="btn" id="openResearch" type="button"><span class="ic" data-ic="chart-line-up"></span><span>تحليل المحتوى</span></button>
+  </section>
+
+  <section class="block">
+    <div class="bt">التحكم في الفيديو <span class="muted" id="vcInfo"></span></div>
+    <div class="vc" dir="ltr">
+      <button class="ibtn" data-a="seek" data-v="-5" title="رجوع 5 ثوانٍ"><span class="ic" data-ic="arrow-counter-clockwise"></span><small>5</small></button>
+      <button class="ibtn" data-a="step" data-v="-1" title="إطار للخلف"><span class="ic" data-ic="skip-back"></span></button>
+      <button class="ibtn main" data-a="toggle" title="تشغيل / إيقاف"><span class="ic" data-ic="play"></span></button>
+      <button class="ibtn" data-a="step" data-v="1" title="إطار للأمام"><span class="ic" data-ic="skip-forward"></span></button>
+      <button class="ibtn" data-a="seek" data-v="5" title="تقديم 5 ثوانٍ"><span class="ic" data-ic="arrow-clockwise"></span><small>5</small></button>
+    </div>
+    <div class="vc" dir="ltr">
+      <button class="ibtn" data-a="speed" data-v="down" title="أبطأ"><span class="ic" data-ic="minus"></span></button>
+      <span class="speed num" id="speed">1×</span>
+      <button class="ibtn" data-a="speed" data-v="up" title="أسرع"><span class="ic" data-ic="plus"></span></button>
+      <button class="ibtn" data-a="speed" data-v="reset" title="سرعة عادية"><span class="ic" data-ic="gauge"></span></button>
+      <button class="ibtn" data-a="mute" title="كتم"><span class="ic" data-ic="speaker-high"></span></button>
+    </div>
+    <div class="err" id="vcErr" hidden></div>
+  </section>
+
+  <details class="block keysblock">
+    <summary class="bt"><span class="ic" data-ic="keyboard"></span>الاختصارات<span class="ic caret" data-ic="caret-left"></span></summary>
+    <dl class="keys">
+      <div><dt><kbd>Space</kbd> <kbd>K</kbd></dt><dd>تشغيل / إيقاف</dd></div>
+      <div><dt><kbd>J</kbd> <kbd>L</kbd> · <kbd>←</kbd> <kbd>→</kbd></dt><dd>رجوع / تقديم 5 ثوانٍ</dd></div>
+      <div><dt><kbd>,</kbd> <kbd>.</kbd></dt><dd>إطار للخلف / للأمام</dd></div>
+      <div><dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>أبطأ / أسرع</dd></div>
+      <div><dt><kbd>\</kbd></dt><dd>سرعة عادية</dd></div>
+      <div><dt><kbd>M</kbd></dt><dd>كتم الصوت</dd></div>
+      <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>رفع / خفض الصوت</dd></div>
+      <div><dt><kbd>H</kbd></dt><dd>إظهار / إخفاء الشريط</dd></div>
+      <div><dt><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></dt><dd>فتح شبكة الريلز</dd></div>
+    </dl>
+    <p class="note">في عارض الريل: <kbd>←</kbd> <kbd>→</kbd> للريل التالي والسابق، و<kbd>Esc</kbd> للإغلاق.</p>
+  </details>
+
+  <script src="../../lib/phosphor/icons.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

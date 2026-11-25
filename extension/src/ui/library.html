@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>المكتبة · Amine Reels</title>
+  <link rel="icon" href="../../icons/icon-32.png">
+  <link rel="stylesheet" href="library.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img src="../../icons/icon-48.png" alt="">
+      <div>
+        <h1>المكتبة</h1>
+        <div class="sub" id="sub"></div>
+      </div>
+    </div>
+    <div class="tools">
+      <label class="search"><span class="ic" data-ic="magnifying-glass"></span><input id="q" type="search" placeholder="ابحث في الحساب أو الوصف أو النص"></label>
+      <label class="sel"><span class="ic" data-ic="sort-ascending"></span>
+        <select id="sort">
+          <option value="savedAt">تاريخ الحفظ</option>
+          <option value="outlier">نقاط التميّز</option>
+          <option value="views">المشاهدات</option>
+          <option value="likes">الإعجابات</option>
+          <option value="takenAt">تاريخ النشر</option>
+        </select>
+      </label>
+      <button class="btn" id="exJson" type="button"><span class="ic" data-ic="download-simple"></span><span>JSON</span></button>
+      <button class="btn" id="exCsv" type="button"><span class="ic" data-ic="download-simple"></span><span>CSV</span></button>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="side" id="side"></aside>
+    <main>
+      <div class="viewbar">
+        <div class="vtitle"><h2 id="vname"></h2><span class="vcount" id="vcount"></span></div>
+        <div class="vacts">
+          <button class="btn" id="selBtn" type="button"><span class="ic" data-ic="check-square"></span><span>تحديد</span></button>
+          <button class="btn primary" id="dlAll" type="button"><span class="ic" data-ic="download-simple"></span><span>تنزيل الكل</span></button>
+        </div>
+      </div>
+      <div class="selbar" id="selbar" hidden></div>
+      <div class="dl" id="dl" hidden></div>
+      <div class="toast" id="toast" hidden></div>
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty" hidden></div>
+    </main>
+  </div>
+  <script src="../../lib/phosphor/icons.js"></script>
+  <script src="library.js"></script>
+</body>
+</html>
