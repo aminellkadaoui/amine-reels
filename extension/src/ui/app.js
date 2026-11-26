@@ -1215,6 +1215,24 @@ input,select{font:inherit;color:inherit}
     for (var i = 0; i < node.children.length && i < 4; i++) { var r = opaqueIn(node.children[i], depth - 1, minW); if (r) return r; }
     return null;
   }
+  // the colour really painted on screen at (x, y), under our own panel (what the eye sees next to it)
+  function paintedAt(x, y) {
+    if (!(x >= 0 && y >= 0 && x < innerWidth && y < innerHeight) || !document.elementsFromPoint) return null;
+    var els = document.elementsFromPoint(x, y);
+    for (var i = 0; i < els.length; i++) {
+      var n = els[i];
+      if (dockHost && (n === dockHost || dockHost.contains(n))) continue;
+      var r = opaqueIn(n, 0);
+      if (r) return r;
+    }
+    return null;
+  }
+  // read it just above the panel (the author strip) and just below it (the caption): both are the window's own colour
+  function paintedNear(box) {
+    if (!box || box.width < 40) return null;
+    var x = box.left + box.width / 2;
+    return paintedAt(x, box.top - 4) || paintedAt(x, box.bottom + 4);
+  }
   function columnSurface(col) {
     var inDlg = !!(col.closest && col.closest('[role="dialog"]')), minW = col.getBoundingClientRect().width * 0.8;
     for (var i = 0; i < col.children.length && i < 3; i++) {
@@ -1252,13 +1270,15 @@ input,select{font:inherit;color:inherit}
     if (col && performance.now() < 5000) return;   // first page still hydrating: dock it a moment later (pollReel repeats)
     if (col) {
       // inside the column, right under its first block (the author header)
-      dockHost.style.cssText = 'display:block;position:relative;flex:none;';
+      // the panel itself is transparent: paint the host with the colour Instagram paints on the column's own blocks
+      // (post window, dark: the window's grey, not the darker page that would show through)
       var ref = col.children.length > 1 ? col.children[1] : null;
       if (dockHost.parentNode !== col || dockHost.nextSibling !== ref) { if (ref !== dockHost) col.insertBefore(dockHost, ref); }
+      var cc = paintedNear(dockHost.getBoundingClientRect()) || columnSurface(col);
+      dockHost.style.cssText = 'display:block;position:relative;flex:none;' + (cc ? 'background:' + cc + ';' : '');
       dockEl.className = dockEl.className.replace(/\bside\b/g, '').trim();
       dockEl.style.cssText = '';
       // surfaces = exactly the column's own colour (no darker / blacker panel inside Instagram's column)
-      var cc = columnSurface(col);
       if (cc) { dockRoot.style.setProperty('--w', cc); dockRoot.style.setProperty('--bg', cc); }
       return;
     }
