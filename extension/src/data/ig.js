@@ -19,6 +19,7 @@
   const media = new Map();   // code -> normalized Reel (merged)
   const users = new Map();   // lower username -> Profile (+ id)
   const subtitleUrls = new Map(); // code -> [url]
+  const stories = new Map();      // story item pk -> { videoUrl, username }
 
   /* ---------------- helpers ---------------- */
   function codeToPk(code) {
@@ -225,6 +226,11 @@
       if (!o || typeof o !== 'object' || depth > 80 || seen.has(o)) return;
       seen.add(o);
       if (Array.isArray(o)) { for (const x of o) walk(x, depth + 1); return; }
+      // story items (and any media) by pk: stories are opened by pk in the URL (/stories/<user>/<pk>/)
+      if (o.pk && o.video_versions && o.video_versions[0] && o.video_versions[0].url) {
+        const u = o.user || o.owner || {};
+        stories.set(String(o.pk), { videoUrl: o.video_versions[0].url, username: u.username || (stories.get(String(o.pk)) || {}).username });
+      }
       if (looksLikeMedia(o)) {
         try { const r = mergeMedia(normMedia(o)); findSubtitleUrls(o, r.code); } catch (e) { /* ignore one bad node */ }
       }
@@ -415,6 +421,20 @@
     }
     if (!r) throw lastErr || err('noReel');
     return publicReel(r);
+  }
+
+  // one story item's original video file (the story's pk from the URL)
+  async function getStory(pk) {
+    pk = String(pk || '').replace(/\D/g, '');
+    if (!pk) throw err('badUrl');
+    let s = stories.get(pk);
+    if (!s) {
+      const j = await igJSON('/api/v1/media/' + pk + '/info/');
+      if (j && j.items && j.items[0]) ingest(j.items[0]);
+      s = stories.get(pk);
+    }
+    if (!s || !s.videoUrl) throw err('noReel');
+    return { code: pk, videoUrl: s.videoUrl, username: s.username };
   }
 
   function visibleVideo() {
@@ -707,7 +727,7 @@
   }
 
   /* ---------------- RPC ---------------- */
-  const API = { pageInfo, getCurrentReel, getReel, getProfileReels, getTranscript };
+  const API = { pageInfo, getCurrentReel, getReel, getStory, getProfileReels, getTranscript };
   window.addEventListener('message', async (ev) => {
     if (ev.source !== window) return;
     const d = ev.data;

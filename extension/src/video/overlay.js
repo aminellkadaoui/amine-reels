@@ -36,6 +36,7 @@
     repeat: 'M24,128A72.08,72.08,0,0,1,96,56H204.69L194.34,45.66a8,8,0,0,1,11.32-11.32l24,24a8,8,0,0,1,0,11.32l-24,24a8,8,0,0,1-11.32-11.32L204.69,72H96a56.06,56.06,0,0,0-56,56,8,8,0,0,1-16,0Zm200-8a8,8,0,0,0-8,8,56.06,56.06,0,0,1-56,56H51.31l10.35-10.34a8,8,0,0,0-11.32-11.32l-24,24a8,8,0,0,0,0,11.32l24,24a8,8,0,0,0,11.32-11.32L51.31,200H160a72.08,72.08,0,0,0,72-72A8,8,0,0,0,224,120Z',
     pin: 'M235.32,81.37,174.63,20.69a16,16,0,0,0-22.63,0L98.37,74.49c-10.66-3.34-35-7.37-60.4,13.14a16,16,0,0,0-1.29,23.78L85,159.71,42.34,202.34a8,8,0,0,0,11.32,11.32L96.29,171l48.29,48.29A16,16,0,0,0,155.9,224c.38,0,.75,0,1.13,0a15.93,15.93,0,0,0,11.64-6.33c19.64-26.1,17.75-47.32,13.19-60L235.33,104A16,16,0,0,0,235.32,81.37ZM224,92.69h0l-57.27,57.46a8,8,0,0,0-1.49,9.22c9.46,18.93-1.8,38.59-9.34,48.62L48,100.08c12.08-9.74,23.64-12.31,32.48-12.31A40.13,40.13,0,0,1,96.81,91a8,8,0,0,0,9.25-1.51L163.32,32,224,92.68Z',
     minus: 'M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128Z',
+    download: 'M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z',
     plus: 'M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z'
   };
 
@@ -50,7 +51,7 @@
   var fpsMap = new WeakMap(); // video -> detected fps
   var pointer = { x: -1, y: -1, inside: false };
   var flashUntil = 0, dragging = null, loopOn = false, lastHref = location.href;
-  var host, shadow, bar, toastEl, ui = {}, toastTimer = 0;
+  var host, shadow, bar, toastEl, dlBtn, ui = {}, toastTimer = 0;
   var last = {}; // last rendered values (avoid redundant DOM writes)
 
   var hasChrome = false;
@@ -230,6 +231,7 @@
     if (bar) {
       if (!(v && underMode())) bar.classList.remove('on');
       last.shown = bar.classList.contains('on');
+      last.dl = !!(dlBtn && dlBtn.classList.contains('on'));
     }
     if (v) setTimeout(requestTick, ROOM_DELAY + 50); // Instagram's post window animates in: make room once it settled
     if (v) {
@@ -499,6 +501,11 @@
     '.bar[data-ov] .track{background:rgba(255,255,255,.35)}',
     '.bar[data-ov] .buf{background:rgba(255,255,255,.35)}',
     '.bar[data-ov] .sep{background:rgba(255,255,255,.35)}',
+    // Stories: no control bar, only one round download button inside the story (bottom corner), like Instagram's own buttons.
+    '.dl{position:fixed;display:none;pointer-events:auto;width:36px;height:36px;min-width:36px;padding:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff}',
+    '.dl.on{display:inline-flex}',
+    '.dl:hover{background:rgba(0,0,0,.75)}',
+    '.dl svg{width:20px;height:20px}',
     '.toast{position:fixed;display:none;pointer-events:none;background:' + IG('primary-text', '0,0,0') + ';color:' + IG('primary-background', '255,255,255') + ';border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}',
     '.toast.on{display:block}'
   ].join('');
@@ -563,9 +570,10 @@
     ]);
     shadow.appendChild(style);
     shadow.appendChild(h('div', 'bar', null, [slider('scrub', '', true), row]));
+    shadow.appendChild(h('button', 'dl', { type: 'button' }, [icon('download')]));
     shadow.appendChild(h('div', 'toast'));
     var q = function (s) { return shadow.querySelector(s); };
-    bar = q('.bar'); toastEl = q('.toast');
+    bar = q('.bar'); toastEl = q('.toast'); dlBtn = q('.dl');
     ui = {
       play: q('.playb'), back: q('.backb'), fwd: q('.fwdb'), fbk: q('.fbk'), ffw: q('.ffw'),
       time: q('.time'), spd: q('.spd'), mute: q('.muteb'), row: q('.row'),
@@ -584,7 +592,10 @@
         bar.addEventListener(t, function (e) { e.stopPropagation(); if (t === 'dblclick') e.preventDefault(); }, t === 'wheel' || t.indexOf('touch') === 0 ? { passive: true } : false);
       });
 
+    ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'touchstart', 'touchend', 'keydown']
+      .forEach(function (t) { dlBtn.addEventListener(t, function (e) { e.stopPropagation(); }, t.indexOf('touch') === 0 ? { passive: true } : false); });
     var on = function (el, fn) { el.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); fn(e); }); };
+    on(dlBtn, downloadStory);
     on(ui.play, A.toggle);
     // Shift + click: 10 seconds / 10 frames
     on(ui.back, function (e) { A.seek(e.shiftKey ? -10 : -5); });
@@ -617,6 +628,7 @@
     set(ui.play, 'vc.play'); set(ui.back, 'vc.back'); set(ui.fwd, 'vc.fwd'); set(ui.fbk, 'vc.fbk'); set(ui.ffw, 'vc.ffw');
     set(ui.mute, 'vc.mute'); set(ui.vol, 'vc.volume'); set(ui.loop, 'vc.loop'); set(ui.scrub, 'vc.scrub');
     if (ui.spd) { ui.spd.title = T('vc.speedTitle'); ui.spd.setAttribute('aria-label', T('vc.speed')); }
+    if (dlBtn) { dlBtn.title = T('app.download'); dlBtn.setAttribute('aria-label', T('app.download')); }
     if (toastEl) toastEl.setAttribute('dir', I.dir());
   }
   function dragSlider(el, apply) {
@@ -640,13 +652,13 @@
     if (host.parentNode !== parent) { try { parent.appendChild(host); } catch (e) {} }
   }
 
-  function toast(text) {
+  function toast(text, ms) {
     if (!toastEl) return;
     toastEl.textContent = text;
     toastEl.classList.add('on');
     placeToast();
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, TOAST_MS);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, ms || TOAST_MS);
   }
   function placeToast() {
     if (!toastEl || !toastEl.classList.contains('on')) return;
@@ -691,6 +703,45 @@
     return { left: Math.round(left), top: Math.round(top), width: Math.round(w), height: BAR_H };
   }
   // The bar has its own strip under the reel (room made, or the reel already leaves it): no hover needed.
+  // Stories (/stories/<user>/<pk>/): Instagram's own story controls stay; the extension shows only a download button.
+  function storyPage() { return /^\/stories\//.test(location.pathname); }
+  function storyPk() { var m = location.pathname.match(/^\/stories\/([^/]+)\/(\d+)/); return m ? { user: m[1], pk: m[2] } : null; }
+  function hideDl() { if (last.dl) { dlBtn.classList.remove('on'); last.dl = false; last.dlPos = ''; } }
+  function placeDl(r) {
+    if (!r || !storyPk() || visibleArea(r) <= 0 || appCovers()) { hideDl(); return false; }
+    var vw = window.innerWidth, vh = window.innerHeight, S = 36, IN = 12;
+    var x = Math.round(clamp(Math.max(r.left, 0) + IN, 0, vw - S)), y = Math.round(clamp(Math.min(r.bottom, vh) - IN - S, 0, vh - S));
+    var pos = x + ',' + y;
+    last.box = { left: x - 60, top: y, width: S + 120, height: S };   // the toast shows just above the button
+    if (pos !== last.dlPos) { dlBtn.style.left = x + 'px'; dlBtn.style.top = y + 'px'; last.dlPos = pos; placeToast(); }
+    if (!last.dl) { dlBtn.classList.add('on'); last.dl = true; }
+    return true;
+  }
+  var dlBusy = false;
+  function downloadStory() {
+    var s = storyPk();
+    if (!s || dlBusy) return;
+    if (!hasChrome) { toast(T('app.err.updated'), 3000); return; }
+    dlBusy = true;
+    toast(T('app.dl.busy'), 4000);
+    try {
+      chrome.runtime.sendMessage({ type: 'AR_DOWNLOAD', reels: [{ platform: 'instagram', story: true, code: s.pk, username: s.user }], folderName: '' }, function (res) {
+        dlBusy = false;
+        var e = chrome.runtime.lastError;
+        if (e || !res || !res.ok) toast(res && res.error ? T('app.dl.failWhy', { e: res.error }) : T('app.dl.fail'), 3500);
+      });
+    } catch (err) { dlBusy = false; toast(T('app.err.updated'), 3500); }
+  }
+  // the download job's result (the background reports to this tab)
+  if (hasChrome) {
+    try {
+      chrome.runtime.onMessage.addListener(function (m) {
+        if (!m || m.type !== 'AR_DL_PROGRESS' || !m.finished || !storyPage()) return;
+        if (m.failed && m.failed.length) toast(T('app.dl.failWhy', { e: m.failed[0].reason || '' }), 4000);
+        else toast(T('app.dl.ok'), 3500);
+      });
+    } catch (e) {}
+  }
   function homeFeed(v) { return location.pathname === '/' && !!v && !(v.closest && v.closest('[role="dialog"]')); }
   function ovMode() { return !!(target && room && room.v === target && room.overlay); }
   function underMode() { return !!(target && room && room.v === target && !room.fallback); }
@@ -782,7 +833,7 @@
   function ensureRoom(force, now) {
     var v = target;
     if (!v || appCovers() || document.fullscreenElement || document.webkitFullscreenElement) { undoRoom(); return; }
-    if (homeFeed(v)) {
+    if (homeFeed(v) || storyPage()) {      // home feed: bar inside the video; stories: no bar at all. Never scale.
       if (!(room && room.v === v && room.overlay)) { undoRoom(); room = { v: v, none: true, overlay: true }; last.box = null; }
       return;
     }
@@ -836,6 +887,9 @@
     // on the current reel; pickTarget() moves it to the next one in one step (no hide in between).
     var feed = /^https?:\/\/[^/]+\/reels\//;
     if (feed.test(from) && feed.test(lastHref) && target && target.isConnected) { scheduleScan(0); return; }
+    // Stories: from one story to the next the button stays where it is (no hide in between)
+    var story = /^https?:\/\/[^/]+\/stories\//;
+    if (story.test(from) && story.test(lastHref) && target && target.isConnected) { scheduleScan(0); return; }
     // Post window: ← / → (or Instagram's arrows) moves from one post URL to the next while the window stays open.
     // Keep the bar and the reel's room (no hide, no full-size jump); pick the new video at once and re-measure
     // the room in one task once the new post has settled (undo + measure + apply in the same frame: no flicker).
@@ -860,6 +914,8 @@
     if (target && now - lastCheck > 250) { lastCheck = now; checkTarget(); }
     try { ensureRoom(false); } catch (e) {}
     var r = target ? target.getBoundingClientRect() : null;
+    if (storyPage()) { hideBar(); if (placeDl(r)) requestTick(); return; }
+    if (last.dl) hideDl();
     var show = shouldShow(r);
     if (!show) { hideBar(); return; } // loop stops; restarted by pointer/scroll/key/media events
     if (host.parentNode == null) mount();
@@ -914,6 +970,7 @@
     try {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (appCovers()) return; // our viewer / separate grid handles its own keys
+      if (storyPage()) return; // stories: Instagram's own keys (← / → between stories, space)
       if (isTyping(deepActive()) || isTyping(e.composedPath ? e.composedPath()[0] : e.target)) return;
       var k = e.key, kl = k && k.length === 1 ? k.toLowerCase() : k;
       // Shift+, and Shift+. type < and >: read the physical key

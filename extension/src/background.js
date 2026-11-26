@@ -208,7 +208,7 @@ async function igTab(ctx) {
 async function freshUrl(ctx, reel) {
   const tabId = await igTab(ctx);
   if (tabId == null) return { url: null };
-  const r = await ask(tabId, 'getReel', [reel.code || reel.url]);
+  const r = reel.story ? await ask(tabId, 'getStory', [reel.code]) : await ask(tabId, 'getReel', [reel.code || reel.url]);
   if (r && r.ok && r.result && r.result.videoUrl) return { url: r.result.videoUrl, meta: r.result };
   return { url: null, meta: r && r.ok ? r.result : null };
 }
@@ -245,7 +245,7 @@ const errText = (e) => (/^[A-Z_]+$/.test(String(e)) && tr(e)) || tr('failed', { 
 async function runJob(job) {
   const stop = keepAlive();
   await loadLang();
-  const ctx = { tabId: null, opened: null, openTried: false };
+  const ctx = { tabId: job.tabId, opened: null, openTried: false };   // the Instagram tab that asked answers first
   const folder = clean(job.folderName, 60);
   const dir = tr('dlRoot') + '/' + (folder ? folder + '/' : '');
   report(job);
