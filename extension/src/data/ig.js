@@ -349,7 +349,7 @@
     else if (a === 'reels') { out.kind = parts[1] ? 'reel' : 'feed'; if (parts[1]) out.code = parts[1]; if (!parts[1] || parts[1] === 'audio') { delete out.code; out.kind = 'feed'; } }
     else if (parts[1] === 'reel' || parts[1] === 'p') { out.kind = 'reel'; out.code = parts[2]; out.username = a; }
     else if (!RESERVED.has(a) && /^[A-Za-z0-9._]{1,30}$/.test(a)) { out.kind = 'profile'; out.username = a; }
-    else if (a === 'explore') out.kind = 'feed';
+    // Explore / search: the extension stays off (no panel, no bar) — only inside an opened post (its URL is /p/ or /reel/)
     if (out.code) {
       const r = media.get(out.code);
       if (r && r.username && !out.username) out.username = r.username;

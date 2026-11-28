@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "تحليل الريلز — Reels Analysis",
-  "version": "1.9.6",
+  "version": "1.9.9",
   "description": "Personal Instagram reel research: outlier grid, reel stats, folders, downloads, and full video control.",
   "permissions": [
     "storage",

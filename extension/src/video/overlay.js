@@ -486,11 +486,11 @@
     '.vol .track{top:12px}',
     '.vol .knob{top:10px}',
     '.sep{width:1px;height:16px;background:' + IG('separator', '219,219,219') + ';margin:0 3px}',
-    // progressive hiding, chosen by measuring the row (see fitRow): volume slider, loop, time, frame steps
+    // progressive hiding, chosen by measuring the row (see fitRow): volume slider, loop, frame steps, and the time last
     '.h1 .vol,.h1 .sep2{display:none}',
     '.h2 .loopb{display:none}',
+    '.h3 .fbk,.h3 .ffw{display:none}',
     '.h4 .time,.h4 .sep1{display:none}',
-    '.h5 .fbk,.h5 .ffw{display:none}',
     // Home feed only: the bar sits INSIDE the video at its bottom (Instagram's like/comment row is right under the post),
     // on a soft dark fade, white controls (like Instagram's own video controls).
     '.bar[data-ov]{background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.55));color:#fff;padding:2px 6px 4px}',
@@ -915,6 +915,8 @@
     try { ensureRoom(false); } catch (e) {}
     var r = target ? target.getBoundingClientRect() : null;
     if (storyPage()) { hideBar(); if (placeDl(r)) requestTick(); return; }
+    // Explore / search grid: the extension stays off (a post opened from it still gets the bar: its URL is /p/ or /reel/)
+    if (/^\/explore(\/|$)/.test(location.pathname)) { hideBar(); if (last.dl) hideDl(); try { undoRoom(); } catch (e) {} return; }
     if (last.dl) hideDl();
     var show = shouldShow(r);
     if (!show) { hideBar(); return; } // loop stops; restarted by pointer/scroll/key/media events
@@ -971,6 +973,7 @@
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (appCovers()) return; // our viewer / separate grid handles its own keys
       if (storyPage()) return; // stories: Instagram's own keys (← / → between stories, space)
+      if (/^\/explore(\/|$)/.test(location.pathname)) return; // Explore / search: extension off, Instagram's own keys
       if (isTyping(deepActive()) || isTyping(e.composedPath ? e.composedPath()[0] : e.target)) return;
       var k = e.key, kl = k && k.length === 1 ? k.toLowerCase() : k;
       // Shift+, and Shift+. type < and >: read the physical key
@@ -987,8 +990,12 @@
         case 'j': fn = function () { A.seek(big ? -10 : -5); }; break;
         case 'l': fn = function () { A.seek(big ? 10 : 5); }; break;
         // ← / → : previous / next reel; with Shift: seek SEEK_SHIFT_ARROW seconds
-        case 'ArrowLeft': fn = big ? function () { A.seek(-SEEK_SHIFT_ARROW); } : function () { A.reel(-1); }; break;
-        case 'ArrowRight': fn = big ? function () { A.seek(SEEK_SHIFT_ARROW); } : function () { A.reel(1); }; break;
+        case 'ArrowLeft': case 'ArrowRight':
+          // Post window: Instagram moves between posts with ← / → itself. Never act too (both moving = the post jumps
+          // back, or nothing happens). Shift+← / Shift+→ (seek) stay ours.
+          if (!big) { var dv = need(); if (dv && dv.closest && dv.closest('[role="dialog"]')) return; }
+          if (kl === 'ArrowRight') { fn = big ? function () { A.seek(SEEK_SHIFT_ARROW); } : function () { A.reel(1); }; break; }
+          fn = big ? function () { A.seek(-SEEK_SHIFT_ARROW); } : function () { A.reel(-1); }; break;
         case ',': fn = function () { A.step(big ? -10 : -1); }; break;
         case '.': fn = function () { A.step(big ? 10 : 1); }; break;
         case '[': fn = function () { A.speed('down'); }; break;
